@@ -1,0 +1,30 @@
+{
+	"name": "hanzi-practice",
+	"version": "1.0.0",
+	"description": "A website to practice hanzi characters, iteration 1 (easy)",
+	"main": "index.js",
+	"devDependencies": {
+		"@eslint/js": "9.2.0",
+		"@typescript-eslint/eslint-plugin": "7.8.0",
+		"@typescript-eslint/parser": "7.8.0",
+		"esbuild": "0.21.1",
+		"eslint-config-prettier": "9.1.0",
+		"eslint-plugin-prettier": "5.1.3",
+		"prettier": "3.2.5",
+		"typescript": "5.4.5",
+		"typescript-eslint": "7.8.0"
+	},
+	"dependencies": {
+		"@dile/icons": "2.0.6",
+		"@dile/ui": "2.1.4",
+		"firebase": "10.12.2",
+		"hanzi-writer": "3.7.0",
+		"lit": "3.1.4"
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "node build.mjs"
+	},
+	"author": "",
+	"license": "ISC"
+}
