@@ -13,10 +13,15 @@ export async function SetApp(newApp: FirebaseApp): Promise<void> {
   }
 }
 
-export async function AddAppCb(cb: (app: FirebaseApp) => Promise<void>): Promise<void> {
-  callbacks.push(cb);
+export async function AddAppCb(cb: (app: FirebaseApp) => Promise<void>) {
   if (app !== undefined) {
-    await cb(app);
+    queueMicrotask(async () => {
+      if (app !== undefined) {
+        await cb(app);
+      }
+    });
+  } else {
+    callbacks.push(cb);
   }
 }
 

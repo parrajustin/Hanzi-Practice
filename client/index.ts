@@ -3,13 +3,15 @@ import { initializeApp } from "firebase/app";
 // import { getAnalytics } from "firebase/analytics";
 import "./components/router";
 import "./components/quiz";
+import "./components/quizzer";
 import "./components/login";
 import "@dile/ui/components/card/card.js";
 import "@dile/ui/components/button/button.js";
 import "@dile/ui/components/button/button-icon.js";
 import "@dile/ui/components/input/input";
+import "@dile/ui/components/pages/pages.js";
+import "@dile/ui/components/tabs/tabs.js";
 import { SetApp } from "./store";
-import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -24,16 +26,8 @@ const firebaseConfig = {
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
-  console.log("DOMContentLoaded");
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   await SetApp(app);
-
-  const auth = getAuth(app);
-  if (auth.currentUser !== null) {
-    console.log("signed in user!");
-  }
-
   // const analytics = getAnalytics(app);
-  console.log("success");
 });

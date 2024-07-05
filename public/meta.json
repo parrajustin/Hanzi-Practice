@@ -95,7 +95,7 @@
       "format": "esm"
     },
     "client/store.ts": {
-      "bytes": 651,
+      "bytes": 733,
       "imports": [
         {
           "path": "client/option.ts",
@@ -415,7 +415,7 @@
       "format": "esm"
     },
     "client/components/router.ts": {
-      "bytes": 1323,
+      "bytes": 2017,
       "imports": [
         {
           "path": "client/store.ts",
@@ -451,7 +451,7 @@
       "format": "esm"
     },
     "client/components/quiz.ts": {
-      "bytes": 5184,
+      "bytes": 5280,
       "imports": [
         {
           "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js",
@@ -481,8 +481,106 @@
       ],
       "format": "esm"
     },
-    "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/iconStyles.js": {
-      "bytes": 328,
+    "client/util/spaced_repetition.ts": {
+      "bytes": 3169,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@firebase+webchannel-wrapper@1.0.0/node_modules/@firebase/webchannel-wrapper/dist/bloom-blob/esm/bloom_blob_es2018.js": {
+      "bytes": 11489,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@firebase+webchannel-wrapper@1.0.0/node_modules/@firebase/webchannel-wrapper/dist/webchannel-blob/esm/webchannel_blob_es2018.js": {
+      "bytes": 42811,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@firebase+firestore@4.6.3_@firebase+app@0.10.5/node_modules/@firebase/firestore/dist/index.esm2017.js": {
+      "bytes": 954573,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/@firebase+app@0.10.5/node_modules/@firebase/app/dist/esm/index.esm2017.js",
+          "kind": "import-statement",
+          "original": "@firebase/app"
+        },
+        {
+          "path": "node_modules/.pnpm/@firebase+component@0.6.7/node_modules/@firebase/component/dist/esm/index.esm2017.js",
+          "kind": "import-statement",
+          "original": "@firebase/component"
+        },
+        {
+          "path": "node_modules/.pnpm/@firebase+logger@0.4.2/node_modules/@firebase/logger/dist/esm/index.esm2017.js",
+          "kind": "import-statement",
+          "original": "@firebase/logger"
+        },
+        {
+          "path": "node_modules/.pnpm/@firebase+util@1.9.6/node_modules/@firebase/util/dist/index.esm2017.js",
+          "kind": "import-statement",
+          "original": "@firebase/util"
+        },
+        {
+          "path": "node_modules/.pnpm/@firebase+webchannel-wrapper@1.0.0/node_modules/@firebase/webchannel-wrapper/dist/bloom-blob/esm/bloom_blob_es2018.js",
+          "kind": "import-statement",
+          "original": "@firebase/webchannel-wrapper/bloom-blob"
+        },
+        {
+          "path": "node_modules/.pnpm/@firebase+webchannel-wrapper@1.0.0/node_modules/@firebase/webchannel-wrapper/dist/webchannel-blob/esm/webchannel_blob_es2018.js",
+          "kind": "import-statement",
+          "original": "@firebase/webchannel-wrapper/webchannel-blob"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/firebase@10.12.2/node_modules/firebase/firestore/dist/esm/index.esm.js": {
+      "bytes": 75,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/@firebase+firestore@4.6.3_@firebase+app@0.10.5/node_modules/@firebase/firestore/dist/index.esm2017.js",
+          "kind": "import-statement",
+          "original": "@firebase/firestore"
+        }
+      ],
+      "format": "esm"
+    },
+    "client/components/quizzer.ts": {
+      "bytes": 3408,
+      "imports": [
+        {
+          "path": "client/store.ts",
+          "kind": "import-statement",
+          "original": "client/store"
+        },
+        {
+          "path": "client/util/spaced_repetition.ts",
+          "kind": "import-statement",
+          "original": "client/util/spaced_repetition"
+        },
+        {
+          "path": "node_modules/.pnpm/firebase@10.12.2/node_modules/firebase/firestore/dist/esm/index.esm.js",
+          "kind": "import-statement",
+          "original": "firebase/firestore"
+        },
+        {
+          "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js",
+          "kind": "import-statement",
+          "original": "lit"
+        },
+        {
+          "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/decorators.js",
+          "kind": "import-statement",
+          "original": "lit/decorators.js"
+        },
+        {
+          "path": "<runtime>",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/account.js": {
+      "bytes": 541,
       "imports": [
         {
           "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js",
@@ -492,8 +590,88 @@
       ],
       "format": "esm"
     },
-    "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/account.js": {
-      "bytes": 541,
+    "client/components/login.ts": {
+      "bytes": 3282,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js",
+          "kind": "import-statement",
+          "original": "lit"
+        },
+        {
+          "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/decorators.js",
+          "kind": "import-statement",
+          "original": "lit/decorators.js"
+        },
+        {
+          "path": "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/account.js",
+          "kind": "import-statement",
+          "original": "@dile/icons/src/account"
+        },
+        {
+          "path": "node_modules/.pnpm/firebase@10.12.2/node_modules/firebase/auth/dist/esm/index.esm.js",
+          "kind": "import-statement",
+          "original": "firebase/auth"
+        },
+        {
+          "path": "client/store.ts",
+          "kind": "import-statement",
+          "original": "client/store"
+        },
+        {
+          "path": "<runtime>",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/card/src/DileCard.js": {
+      "bytes": 3616,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js",
+          "kind": "import-statement",
+          "original": "lit"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/card/card.js": {
+      "bytes": 100,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/card/src/DileCard.js",
+          "kind": "import-statement",
+          "original": "./src/DileCard.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/button/src/DileButton.js": {
+      "bytes": 2616,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js",
+          "kind": "import-statement",
+          "original": "lit"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/button/button.js": {
+      "bytes": 108,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/button/src/DileButton.js",
+          "kind": "import-statement",
+          "original": "./src/DileButton.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/iconStyles.js": {
+      "bytes": 328,
       "imports": [
         {
           "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js",
@@ -2135,86 +2313,6 @@
       ],
       "format": "esm"
     },
-    "client/components/login.ts": {
-      "bytes": 3270,
-      "imports": [
-        {
-          "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js",
-          "kind": "import-statement",
-          "original": "lit"
-        },
-        {
-          "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/decorators.js",
-          "kind": "import-statement",
-          "original": "lit/decorators.js"
-        },
-        {
-          "path": "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/index.js",
-          "kind": "import-statement",
-          "original": "@dile/icons"
-        },
-        {
-          "path": "node_modules/.pnpm/firebase@10.12.2/node_modules/firebase/auth/dist/esm/index.esm.js",
-          "kind": "import-statement",
-          "original": "firebase/auth"
-        },
-        {
-          "path": "client/store.ts",
-          "kind": "import-statement",
-          "original": "client/store"
-        },
-        {
-          "path": "<runtime>",
-          "kind": "import-statement",
-          "external": true
-        }
-      ],
-      "format": "esm"
-    },
-    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/card/src/DileCard.js": {
-      "bytes": 3616,
-      "imports": [
-        {
-          "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js",
-          "kind": "import-statement",
-          "original": "lit"
-        }
-      ],
-      "format": "esm"
-    },
-    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/card/card.js": {
-      "bytes": 100,
-      "imports": [
-        {
-          "path": "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/card/src/DileCard.js",
-          "kind": "import-statement",
-          "original": "./src/DileCard.js"
-        }
-      ],
-      "format": "esm"
-    },
-    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/button/src/DileButton.js": {
-      "bytes": 2616,
-      "imports": [
-        {
-          "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js",
-          "kind": "import-statement",
-          "original": "lit"
-        }
-      ],
-      "format": "esm"
-    },
-    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/button/button.js": {
-      "bytes": 108,
-      "imports": [
-        {
-          "path": "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/button/src/DileButton.js",
-          "kind": "import-statement",
-          "original": "./src/DileButton.js"
-        }
-      ],
-      "format": "esm"
-    },
     "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/icon/src/DileIcon.js": {
       "bytes": 1009,
       "imports": [
@@ -2353,8 +2451,121 @@
       ],
       "format": "esm"
     },
+    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/pages/src/DilePages.js": {
+      "bytes": 4871,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js",
+          "kind": "import-statement",
+          "original": "lit"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/pages/pages.js": {
+      "bytes": 104,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/pages/src/DilePages.js",
+          "kind": "import-statement",
+          "original": "./src/DilePages.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/mixins/selectable/src/DileSelectable.js": {
+      "bytes": 4125,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js",
+          "kind": "import-statement",
+          "original": "lit"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/mixins/selectable/src/DileSelectableItem.js": {
+      "bytes": 570,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/mixins/selectable/index.js": {
+      "bytes": 123,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/mixins/selectable/src/DileSelectable.js",
+          "kind": "import-statement",
+          "original": "./src/DileSelectable.js"
+        },
+        {
+          "path": "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/mixins/selectable/src/DileSelectableItem.js",
+          "kind": "import-statement",
+          "original": "./src/DileSelectableItem.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/tabs/src/DileTab.js": {
+      "bytes": 1874,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js",
+          "kind": "import-statement",
+          "original": "lit"
+        },
+        {
+          "path": "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/mixins/selectable/index.js",
+          "kind": "import-statement",
+          "original": "../../../mixins/selectable/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/tabs/tab.js": {
+      "bytes": 96,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/tabs/src/DileTab.js",
+          "kind": "import-statement",
+          "original": "./src/DileTab.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/tabs/src/DileTabs.js": {
+      "bytes": 273,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js",
+          "kind": "import-statement",
+          "original": "lit"
+        },
+        {
+          "path": "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/mixins/selectable/index.js",
+          "kind": "import-statement",
+          "original": "../../../mixins/selectable/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/tabs/tabs.js": {
+      "bytes": 119,
+      "imports": [
+        {
+          "path": "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/tabs/tab.js",
+          "kind": "import-statement",
+          "original": "./tab.js"
+        },
+        {
+          "path": "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/tabs/src/DileTabs.js",
+          "kind": "import-statement",
+          "original": "./src/DileTabs.js"
+        }
+      ],
+      "format": "esm"
+    },
     "client/index.ts": {
-      "bytes": 1314,
+      "bytes": 1225,
       "imports": [
         {
           "path": "node_modules/.pnpm/firebase@10.12.2/node_modules/firebase/app/dist/esm/index.esm.js",
@@ -2370,6 +2581,11 @@
           "path": "client/components/quiz.ts",
           "kind": "import-statement",
           "original": "./components/quiz"
+        },
+        {
+          "path": "client/components/quizzer.ts",
+          "kind": "import-statement",
+          "original": "./components/quizzer"
         },
         {
           "path": "client/components/login.ts",
@@ -2397,14 +2613,19 @@
           "original": "@dile/ui/components/input/input"
         },
         {
+          "path": "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/pages/pages.js",
+          "kind": "import-statement",
+          "original": "@dile/ui/components/pages/pages.js"
+        },
+        {
+          "path": "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/tabs/tabs.js",
+          "kind": "import-statement",
+          "original": "@dile/ui/components/tabs/tabs.js"
+        },
+        {
           "path": "client/store.ts",
           "kind": "import-statement",
           "original": "./store"
-        },
-        {
-          "path": "node_modules/.pnpm/firebase@10.12.2/node_modules/firebase/auth/dist/esm/index.esm.js",
-          "kind": "import-statement",
-          "original": "firebase/auth"
         }
       ],
       "format": "esm"
@@ -2415,7 +2636,7 @@
       "imports": [],
       "exports": [],
       "inputs": {},
-      "bytes": 1344123
+      "bytes": 3488109
     },
     "public/index.js": {
       "imports": [],
@@ -2423,37 +2644,37 @@
       "entryPoint": "client/index.ts",
       "inputs": {
         "node_modules/.pnpm/@firebase+util@1.9.6/node_modules/@firebase/util/dist/index.esm2017.js": {
-          "bytesInOutput": 20861
+          "bytesInOutput": 9543
         },
         "node_modules/.pnpm/@firebase+component@0.6.7/node_modules/@firebase/component/dist/esm/index.esm2017.js": {
-          "bytesInOutput": 10551
+          "bytesInOutput": 4284
         },
         "node_modules/.pnpm/@firebase+logger@0.4.2/node_modules/@firebase/logger/dist/esm/index.esm2017.js": {
-          "bytesInOutput": 3370
+          "bytesInOutput": 1711
         },
         "node_modules/.pnpm/@firebase+app@0.10.5/node_modules/@firebase/app/dist/esm/index.esm2017.js": {
-          "bytesInOutput": 19674
+          "bytesInOutput": 9253
         },
         "node_modules/.pnpm/idb@7.1.1/node_modules/idb/build/wrap-idb-value.js": {
-          "bytesInOutput": 4662
+          "bytesInOutput": 2017
         },
         "node_modules/.pnpm/idb@7.1.1/node_modules/idb/build/index.js": {
-          "bytesInOutput": 2420
+          "bytesInOutput": 1047
         },
         "node_modules/.pnpm/firebase@10.12.2/node_modules/firebase/app/dist/esm/index.esm.js": {
-          "bytesInOutput": 97
+          "bytesInOutput": 47
         },
         "client/option.ts": {
-          "bytesInOutput": 2501
+          "bytesInOutput": 417
         },
         "client/store.ts": {
-          "bytesInOutput": 362
+          "bytesInOutput": 206
         },
         "node_modules/.pnpm/tslib@2.6.3/node_modules/tslib/tslib.es6.mjs": {
-          "bytesInOutput": 479
+          "bytesInOutput": 331
         },
         "node_modules/.pnpm/@firebase+auth@1.7.4_@firebase+app@0.10.5/node_modules/@firebase/auth/dist/esm2017/index-454a0f5f.js": {
-          "bytesInOutput": 195539
+          "bytesInOutput": 82676
         },
         "node_modules/.pnpm/@firebase+auth@1.7.4_@firebase+app@0.10.5/node_modules/@firebase/auth/dist/esm2017/index.js": {
           "bytesInOutput": 0
@@ -2462,16 +2683,16 @@
           "bytesInOutput": 0
         },
         "node_modules/.pnpm/@lit+reactive-element@2.0.4/node_modules/@lit/reactive-element/css-tag.js": {
-          "bytesInOutput": 1890
+          "bytesInOutput": 1337
         },
         "node_modules/.pnpm/@lit+reactive-element@2.0.4/node_modules/@lit/reactive-element/reactive-element.js": {
-          "bytesInOutput": 8152
+          "bytesInOutput": 5537
         },
         "node_modules/.pnpm/lit-html@3.1.4/node_modules/lit-html/lit-html.js": {
-          "bytesInOutput": 10659
+          "bytesInOutput": 7081
         },
         "node_modules/.pnpm/lit-element@4.0.6/node_modules/lit-element/lit-element.js": {
-          "bytesInOutput": 985
+          "bytesInOutput": 754
         },
         "node_modules/.pnpm/lit@3.1.4/node_modules/lit/index.js": {
           "bytesInOutput": 0
@@ -2480,16 +2701,16 @@
           "bytesInOutput": 0
         },
         "node_modules/.pnpm/@lit+reactive-element@2.0.4/node_modules/@lit/reactive-element/decorators/custom-element.js": {
-          "bytesInOutput": 161
+          "bytesInOutput": 108
         },
         "node_modules/.pnpm/lit@3.1.4/node_modules/lit/decorators.js": {
           "bytesInOutput": 0
         },
         "node_modules/.pnpm/@lit+reactive-element@2.0.4/node_modules/@lit/reactive-element/decorators/property.js": {
-          "bytesInOutput": 1172
+          "bytesInOutput": 762
         },
         "node_modules/.pnpm/@lit+reactive-element@2.0.4/node_modules/@lit/reactive-element/decorators/state.js": {
-          "bytesInOutput": 81
+          "bytesInOutput": 55
         },
         "node_modules/.pnpm/@lit+reactive-element@2.0.4/node_modules/@lit/reactive-element/decorators/event-options.js": {
           "bytesInOutput": 0
@@ -2513,373 +2734,418 @@
           "bytesInOutput": 0
         },
         "client/components/router.ts": {
-          "bytesInOutput": 1132
+          "bytesInOutput": 1326
         },
         "node_modules/.pnpm/hanzi-writer@3.7.0/node_modules/hanzi-writer/dist/index.esm.js": {
-          "bytesInOutput": 78701
+          "bytesInOutput": 36593
         },
         "client/components/quiz.ts": {
-          "bytesInOutput": 4880
+          "bytesInOutput": 3162
+        },
+        "client/util/spaced_repetition.ts": {
+          "bytesInOutput": 635
+        },
+        "node_modules/.pnpm/@firebase+webchannel-wrapper@1.0.0/node_modules/@firebase/webchannel-wrapper/dist/bloom-blob/esm/bloom_blob_es2018.js": {
+          "bytesInOutput": 10934
+        },
+        "node_modules/.pnpm/@firebase+webchannel-wrapper@1.0.0/node_modules/@firebase/webchannel-wrapper/dist/webchannel-blob/esm/webchannel_blob_es2018.js": {
+          "bytesInOutput": 41359
+        },
+        "node_modules/.pnpm/@firebase+firestore@4.6.3_@firebase+app@0.10.5/node_modules/@firebase/firestore/dist/index.esm2017.js": {
+          "bytesInOutput": 148458
+        },
+        "node_modules/.pnpm/firebase@10.12.2/node_modules/firebase/firestore/dist/esm/index.esm.js": {
+          "bytesInOutput": 0
+        },
+        "client/components/quizzer.ts": {
+          "bytesInOutput": 1382
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/account.js": {
+          "bytesInOutput": 490
+        },
+        "client/components/login.ts": {
+          "bytesInOutput": 1503
+        },
+        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/card/src/DileCard.js": {
+          "bytesInOutput": 3324
+        },
+        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/card/card.js": {
+          "bytesInOutput": 45
+        },
+        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/button/src/DileButton.js": {
+          "bytesInOutput": 2412
+        },
+        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/button/button.js": {
+          "bytesInOutput": 47
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/iconStyles.js": {
-          "bytesInOutput": 291
+          "bytesInOutput": 278
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/index.js": {
           "bytesInOutput": 0
         },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/account.js": {
-          "bytesInOutput": 504
-        },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/add.js": {
-          "bytesInOutput": 231
+          "bytesInOutput": 221
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/announcement.js": {
-          "bytesInOutput": 310
+          "bytesInOutput": 291
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/apps.js": {
-          "bytesInOutput": 330
+          "bytesInOutput": 319
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/arrowDropDown.js": {
-          "bytesInOutput": 220
+          "bytesInOutput": 200
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/arrowDropUp.js": {
-          "bytesInOutput": 218
+          "bytesInOutput": 200
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/arrowRight.js": {
-          "bytesInOutput": 305
+          "bytesInOutput": 288
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/attachFile.js": {
-          "bytesInOutput": 455
+          "bytesInOutput": 438
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/attachment.js": {
-          "bytesInOutput": 436
+          "bytesInOutput": 419
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/autoAwesome.js": {
-          "bytesInOutput": 406
+          "bytesInOutput": 388
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/calendar.js": {
-          "bytesInOutput": 332
+          "bytesInOutput": 317
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/checkboxBlank.js": {
-          "bytesInOutput": 296
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/checkboxChecked.js": {
-          "bytesInOutput": 339
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/circle.js": {
-          "bytesInOutput": 265
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/circleBorder.js": {
-          "bytesInOutput": 329
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/clear.js": {
-          "bytesInOutput": 299
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/close.js": {
-          "bytesInOutput": 431
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/code.js": {
-          "bytesInOutput": 289
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/cookie.js": {
-          "bytesInOutput": 645
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/crop.js": {
-          "bytesInOutput": 289
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/delete.js": {
           "bytesInOutput": 276
         },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/description.js": {
-          "bytesInOutput": 330
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/checkboxChecked.js": {
+          "bytesInOutput": 317
         },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/done.js": {
-          "bytesInOutput": 247
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/circle.js": {
+          "bytesInOutput": 252
         },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/doubleArrowLeft.js": {
-          "bytesInOutput": 393
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/doubleArrowRight.js": {
-          "bytesInOutput": 391
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/download.js": {
-          "bytesInOutput": 298
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/east.js": {
-          "bytesInOutput": 299
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/edit.js": {
-          "bytesInOutput": 346
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/email.js": {
-          "bytesInOutput": 307
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/euro.js": {
-          "bytesInOutput": 625
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/favorite.js": {
-          "bytesInOutput": 375
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/filter.js": {
-          "bytesInOutput": 440
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/filterList.js": {
-          "bytesInOutput": 249
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/folder.js": {
-          "bytesInOutput": 290
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/folderZip.js": {
-          "bytesInOutput": 413
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatAlignCenter.js": {
-          "bytesInOutput": 285
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatAlignLeft.js": {
-          "bytesInOutput": 284
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatAlignRight.js": {
-          "bytesInOutput": 284
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatBold.js": {
-          "bytesInOutput": 432
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatColorText.js": {
-          "bytesInOutput": 386
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatIndentDecrease.js": {
-          "bytesInOutput": 308
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatIndentIncrease.js": {
-          "bytesInOutput": 305
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatItalic.js": {
-          "bytesInOutput": 253
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatListBulleted.js": {
-          "bytesInOutput": 484
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatListNumbered.js": {
-          "bytesInOutput": 349
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatQuote.js": {
-          "bytesInOutput": 244
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatUnderlined.js": {
-          "bytesInOutput": 324
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/help.js": {
-          "bytesInOutput": 465
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/home.js": {
-          "bytesInOutput": 232
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/image.js": {
-          "bytesInOutput": 318
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/info.js": {
-          "bytesInOutput": 293
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/insertLink.js": {
-          "bytesInOutput": 414
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/insertPhoto.js": {
-          "bytesInOutput": 324
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/label.js": {
-          "bytesInOutput": 330
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/lightbulb.js": {
-          "bytesInOutput": 359
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/linkOff.js": {
-          "bytesInOutput": 554
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/list.js": {
-          "bytesInOutput": 283
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/login.js": {
-          "bytesInOutput": 365
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/logout.js": {
-          "bytesInOutput": 309
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/more.js": {
-          "bytesInOutput": 344
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/moreVert.js": {
-          "bytesInOutput": 346
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/newReleases.js": {
-          "bytesInOutput": 412
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/notes.js": {
-          "bytesInOutput": 245
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/notifications.js": {
-          "bytesInOutput": 329
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/openWith.js": {
-          "bytesInOutput": 391
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/paid.js": {
-          "bytesInOutput": 726
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/palette.js": {
-          "bytesInOutput": 802
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/panTool.js": {
-          "bytesInOutput": 549
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/pdf.js": {
-          "bytesInOutput": 503
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/photoCamera.js": {
-          "bytesInOutput": 444
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/priorityHigh.js": {
-          "bytesInOutput": 267
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/questionAnswer.js": {
-          "bytesInOutput": 331
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/radioChecked.js": {
-          "bytesInOutput": 386
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/receipt.js": {
-          "bytesInOutput": 418
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/receiptLong.js": {
-          "bytesInOutput": 528
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/redo.js": {
-          "bytesInOutput": 340
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/refresh.js": {
-          "bytesInOutput": 402
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/rotateLeft.js": {
-          "bytesInOutput": 509
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/rotateRight.js": {
-          "bytesInOutput": 512
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/save.js": {
-          "bytesInOutput": 409
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/scale.js": {
-          "bytesInOutput": 546
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/search.js": {
-          "bytesInOutput": 433
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/settings.js": {
-          "bytesInOutput": 1102
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/shoppingCart.js": {
-          "bytesInOutput": 526
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/sort.js": {
-          "bytesInOutput": 241
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/star.js": {
-          "bytesInOutput": 322
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/starBorder.js": {
-          "bytesInOutput": 395
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/starHalf.js": {
-          "bytesInOutput": 432
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/swap.js": {
-          "bytesInOutput": 267
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/switchLeft.js": {
-          "bytesInOutput": 315
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/textFields.js": {
-          "bytesInOutput": 323
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/thumbUp.js": {
-          "bytesInOutput": 401
-        },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/thumbDown.js": {
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/circleBorder.js": {
           "bytesInOutput": 310
         },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/timer.js": {
-          "bytesInOutput": 468
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/clear.js": {
+          "bytesInOutput": 287
         },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/tune.js": {
-          "bytesInOutput": 316
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/close.js": {
+          "bytesInOutput": 419
         },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/undo.js": {
-          "bytesInOutput": 339
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/code.js": {
+          "bytesInOutput": 278
         },
-        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/upload.js": {
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/cookie.js": {
+          "bytesInOutput": 632
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/crop.js": {
+          "bytesInOutput": 278
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/delete.js": {
+          "bytesInOutput": 263
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/description.js": {
+          "bytesInOutput": 312
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/done.js": {
           "bytesInOutput": 236
         },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/doubleArrowLeft.js": {
+          "bytesInOutput": 371
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/doubleArrowRight.js": {
+          "bytesInOutput": 368
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/download.js": {
+          "bytesInOutput": 283
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/east.js": {
+          "bytesInOutput": 288
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/edit.js": {
+          "bytesInOutput": 335
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/email.js": {
+          "bytesInOutput": 295
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/euro.js": {
+          "bytesInOutput": 614
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/favorite.js": {
+          "bytesInOutput": 360
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/filter.js": {
+          "bytesInOutput": 427
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/filterList.js": {
+          "bytesInOutput": 232
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/folder.js": {
+          "bytesInOutput": 277
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/folderZip.js": {
+          "bytesInOutput": 397
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatAlignCenter.js": {
+          "bytesInOutput": 261
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatAlignLeft.js": {
+          "bytesInOutput": 262
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatAlignRight.js": {
+          "bytesInOutput": 261
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatBold.js": {
+          "bytesInOutput": 415
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatColorText.js": {
+          "bytesInOutput": 364
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatIndentDecrease.js": {
+          "bytesInOutput": 281
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatIndentIncrease.js": {
+          "bytesInOutput": 278
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatItalic.js": {
+          "bytesInOutput": 234
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatListBulleted.js": {
+          "bytesInOutput": 459
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatListNumbered.js": {
+          "bytesInOutput": 324
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatQuote.js": {
+          "bytesInOutput": 226
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/formatUnderlined.js": {
+          "bytesInOutput": 301
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/help.js": {
+          "bytesInOutput": 454
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/home.js": {
+          "bytesInOutput": 221
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/image.js": {
+          "bytesInOutput": 306
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/info.js": {
+          "bytesInOutput": 282
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/insertLink.js": {
+          "bytesInOutput": 397
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/insertPhoto.js": {
+          "bytesInOutput": 306
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/label.js": {
+          "bytesInOutput": 318
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/lightbulb.js": {
+          "bytesInOutput": 343
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/linkOff.js": {
+          "bytesInOutput": 540
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/list.js": {
+          "bytesInOutput": 272
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/login.js": {
+          "bytesInOutput": 353
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/logout.js": {
+          "bytesInOutput": 296
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/more.js": {
+          "bytesInOutput": 333
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/moreVert.js": {
+          "bytesInOutput": 331
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/newReleases.js": {
+          "bytesInOutput": 394
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/notes.js": {
+          "bytesInOutput": 233
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/notifications.js": {
+          "bytesInOutput": 309
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/openWith.js": {
+          "bytesInOutput": 376
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/paid.js": {
+          "bytesInOutput": 715
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/palette.js": {
+          "bytesInOutput": 788
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/panTool.js": {
+          "bytesInOutput": 535
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/pdf.js": {
+          "bytesInOutput": 493
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/photoCamera.js": {
+          "bytesInOutput": 426
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/priorityHigh.js": {
+          "bytesInOutput": 248
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/questionAnswer.js": {
+          "bytesInOutput": 310
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/radioChecked.js": {
+          "bytesInOutput": 367
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/receipt.js": {
+          "bytesInOutput": 404
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/receiptLong.js": {
+          "bytesInOutput": 510
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/redo.js": {
+          "bytesInOutput": 329
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/refresh.js": {
+          "bytesInOutput": 388
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/rotateLeft.js": {
+          "bytesInOutput": 492
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/rotateRight.js": {
+          "bytesInOutput": 494
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/save.js": {
+          "bytesInOutput": 398
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/scale.js": {
+          "bytesInOutput": 534
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/search.js": {
+          "bytesInOutput": 420
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/settings.js": {
+          "bytesInOutput": 1087
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/shoppingCart.js": {
+          "bytesInOutput": 507
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/sort.js": {
+          "bytesInOutput": 230
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/star.js": {
+          "bytesInOutput": 311
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/starBorder.js": {
+          "bytesInOutput": 378
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/starHalf.js": {
+          "bytesInOutput": 417
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/swap.js": {
+          "bytesInOutput": 256
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/switchLeft.js": {
+          "bytesInOutput": 298
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/textFields.js": {
+          "bytesInOutput": 306
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/thumbUp.js": {
+          "bytesInOutput": 387
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/thumbDown.js": {
+          "bytesInOutput": 294
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/timer.js": {
+          "bytesInOutput": 456
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/tune.js": {
+          "bytesInOutput": 305
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/undo.js": {
+          "bytesInOutput": 328
+        },
+        "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/upload.js": {
+          "bytesInOutput": 223
+        },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/videocam.js": {
-          "bytesInOutput": 302
+          "bytesInOutput": 287
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/warning.js": {
-          "bytesInOutput": 250
+          "bytesInOutput": 236
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/zoomIn.js": {
-          "bytesInOutput": 449
+          "bytesInOutput": 436
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/zoomOut.js": {
-          "bytesInOutput": 424
+          "bytesInOutput": 410
         },
         "node_modules/.pnpm/@dile+icons@2.0.6/node_modules/@dile/icons/src/zoomOutMap.js": {
-          "bytesInOutput": 369
-        },
-        "client/components/login.ts": {
-          "bytesInOutput": 2439
-        },
-        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/card/src/DileCard.js": {
-          "bytesInOutput": 3493
-        },
-        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/card/card.js": {
-          "bytesInOutput": 55
-        },
-        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/button/src/DileButton.js": {
-          "bytesInOutput": 2603
-        },
-        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/button/button.js": {
-          "bytesInOutput": 59
+          "bytesInOutput": 352
         },
         "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/icon/src/DileIcon.js": {
-          "bytesInOutput": 933
+          "bytesInOutput": 805
         },
         "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/icon/icon.js": {
-          "bytesInOutput": 55
+          "bytesInOutput": 45
         },
         "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/button/src/DileButtonIcon.js": {
-          "bytesInOutput": 709
+          "bytesInOutput": 576
         },
         "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/button/button-icon.js": {
-          "bytesInOutput": 68
+          "bytesInOutput": 52
         },
         "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/mixins/form/index.js": {
           "bytesInOutput": 0
         },
         "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/mixins/form/src/DileEmmitChange.js": {
-          "bytesInOutput": 301
+          "bytesInOutput": 163
         },
         "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/input/src/message-styles.js": {
-          "bytesInOutput": 326
+          "bytesInOutput": 310
         },
         "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/input/src/DileInput.js": {
-          "bytesInOutput": 6596
+          "bytesInOutput": 4680
         },
         "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/input/input.js": {
-          "bytesInOutput": 57
+          "bytesInOutput": 46
+        },
+        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/pages/src/DilePages.js": {
+          "bytesInOutput": 1928
+        },
+        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/pages/pages.js": {
+          "bytesInOutput": 46
+        },
+        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/mixins/selectable/src/DileSelectable.js": {
+          "bytesInOutput": 2331
+        },
+        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/mixins/selectable/index.js": {
+          "bytesInOutput": 0
+        },
+        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/mixins/selectable/src/DileSelectableItem.js": {
+          "bytesInOutput": 258
+        },
+        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/tabs/src/DileTab.js": {
+          "bytesInOutput": 1677
+        },
+        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/tabs/tab.js": {
+          "bytesInOutput": 44
+        },
+        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/tabs/src/DileTabs.js": {
+          "bytesInOutput": 110
+        },
+        "node_modules/.pnpm/@dile+ui@2.1.4/node_modules/@dile/ui/components/tabs/tabs.js": {
+          "bytesInOutput": 45
         },
         "client/index.ts": {
-          "bytesInOutput": 671
+          "bytesInOutput": 373
         }
       },
-      "bytes": 493679
+      "bytes": 554101
     }
   }
 }

@@ -4,11 +4,12 @@ import * as fs from "fs";
 const result = await esbuild.build({
   entryPoints: ["client/index.ts"],
   bundle: true,
-  minify: false,
+  minify: true,
   sourcemap: "linked",
   platform: "browser",
   target: ["chrome128"],
   metafile: true,
+  treeShaking: true,
   outdir: "public"
 });
 console.log(result);

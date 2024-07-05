@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { LitElement, html, css } from "lit";
 import { customElement } from "lit/decorators.js";
-import { accountIcon } from "@dile/icons";
+import { accountIcon } from "@dile/icons/src/account";
 import {
   getAuth,
   setPersistence,
