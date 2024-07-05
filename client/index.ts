@@ -6,12 +6,14 @@ import "./components/quiz";
 import "./components/quizzer";
 import "./components/login";
 import "./components/view";
+import "./components/new";
 import "@dile/ui/components/card/card.js";
 import "@dile/ui/components/button/button.js";
 import "@dile/ui/components/button/button-icon.js";
 import "@dile/ui/components/input/input";
 import "@dile/ui/components/pages/pages.js";
 import "@dile/ui/components/tabs/tabs.js";
+import "@dile/ui/components/modal/modal";
 import "@doubletrade/lit-datatable/lit-datatable";
 import { SetApp } from "./store";
 

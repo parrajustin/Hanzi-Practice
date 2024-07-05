@@ -62,8 +62,7 @@ export class RouterElement extends LitElement {
               <quizzer-element></quizzer-element>
             </section>
             <section name="new">
-              <p>Page two...</p>
-              Other page...
+              <creator-element></creator-element>
             </section>
             <section name="view">
               <viewer-element></viewer-element>
