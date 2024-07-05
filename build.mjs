@@ -4,7 +4,7 @@ import * as fs from "fs";
 const result = await esbuild.build({
   entryPoints: ["client/index.ts"],
   bundle: true,
-  minify: true,
+  minify: false,
   sourcemap: "linked",
   platform: "browser",
   target: ["chrome128"],

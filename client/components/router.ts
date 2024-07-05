@@ -66,8 +66,7 @@ export class RouterElement extends LitElement {
               Other page...
             </section>
             <section name="view">
-              <p>Page two...</p>
-              Other page...
+              <viewer-element></viewer-element>
             </section>
           </dile-pages>`;
         break;

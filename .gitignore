@@ -132,3 +132,4 @@ dist
 # public
 public/index.js
 public/index.js.map
+public/meta.json
