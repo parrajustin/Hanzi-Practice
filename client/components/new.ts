@@ -59,6 +59,7 @@ export class CreatorElement extends LitElement {
       return;
     }
 
+    let success = true;
     const addPromise = await addDoc(collection(this.db_, "hanzi"), {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       hanzi: (this.shadowRoot?.getElementById("hanzi") as any).value,
@@ -68,8 +69,21 @@ export class CreatorElement extends LitElement {
       text: (this.shadowRoot?.getElementById("prompt") as any).value,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tone: (this.shadowRoot?.getElementById("tone") as any).value
+    }).catch((err) => {
+      console.error("error createHanzi", err);
+      const toast = this.shadowRoot?.getElementById("myToast") as HTMLElement;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (toast as any).open("Failed when calling `addDoc` to firestore!", "error");
     });
     console.log("addPromise", addPromise);
+    if (success) {
+      const toast = this.shadowRoot?.getElementById("myToast") as HTMLElement;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (toast as any).open(
+        `Added ${(this.shadowRoot?.getElementById("hanzi") as HTMLInputElement).value}!`,
+        "success"
+      );
+    }
   }
 
   protected hanziInputChange(e: DileInputChangedEvent) {
@@ -105,7 +119,7 @@ export class CreatorElement extends LitElement {
   }
 
   protected render() {
-    return html` <dile-modal class="modalbox" id="elmodal">
+    return html`<dile-modal class="modalbox" id="elmodal">
         <h2>Found the following examples:</h2>
 
         <ul>
@@ -126,6 +140,7 @@ export class CreatorElement extends LitElement {
           })}
         </ul>
       </dile-modal>
+      <dile-toast id="myToast" duration="1000"></dile-toast>
       <div class="u-full-height">
         <dile-card shadow-md title="Character Creator">
           <div id="quizContainer">
