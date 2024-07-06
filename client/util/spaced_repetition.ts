@@ -107,6 +107,7 @@ export class SpacedRepetition {
     reviews: ISpacedRepetitionReview[]
   ): [ISpacedRepetitionCard, TDayNumber][] {
     const today = this.getDay();
+    console.log("getDueCards today:", today);
 
     return cards
       .map((card): [ISpacedRepetitionCard, TDayNumber] => {
@@ -116,6 +117,9 @@ export class SpacedRepetition {
 
         return [card, this.computeNextRepetition(reviewsForCard)];
       })
-      .filter(([, nextRepetition]) => nextRepetition <= today);
+      .filter(([, nextRepetition]) => {
+        console.log("filter: ", nextRepetition, " rep: ", nextRepetition <= today);
+        return nextRepetition <= today;
+      });
   }
 }
