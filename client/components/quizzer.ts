@@ -170,7 +170,8 @@ export class QuizzerElement extends LitElement {
         pinyin="${hanzi.pinyin}"
         tone="${hanzi.tone}"
         @onComplete="${this.onComplete}"
-      ></quiz-element>`;
+      ></quiz-element>
+      <pinyin-selector-element pinyinLine="${hanzi.pinyin}"></pinyin-selector-element>`;
   }
 
   protected render() {

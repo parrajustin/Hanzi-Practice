@@ -17,6 +17,9 @@ export interface QuizDetail {
 @customElement("quiz-element")
 export class QuizElement extends LitElement {
   static styles = css`
+    :host {
+      --dile-button-font-size: 3rem;
+    }
     #main {
       width: 100%;
       height: 100%;
@@ -81,7 +84,6 @@ export class QuizElement extends LitElement {
   private setupGaveUp = false;
 
   async updated() {
-    
     console.log("updated");
     if (
       this.writer_.some &&

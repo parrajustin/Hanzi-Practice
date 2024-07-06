@@ -63,3 +63,46 @@ export function PrettifyPinyin(str: string) {
   }
   return syllables.join(" ");
 }
+
+export function ConstructOtherOptions(str: string): string[] {
+  const setOfTones = new Set<string>();
+  const mapOfTones = new Map<string, string[]>();
+  const keys = Object.keys(replacements) as unknown as ("a" | "e" | "u" | "i" | "o" | "ü")[];
+  for (const key of keys) {
+    const allTones: string[] = [];
+    const tones = replacements[key];
+    allTones.push(key);
+    setOfTones.add(key);
+    for (const tone of tones) {
+      allTones.push(tone);
+      setOfTones.add(tone);
+    }
+
+    for (const tone of allTones) {
+      const subAllTones = allTones.filter((t) => t !== tone);
+      mapOfTones.set(tone, subAllTones);
+    }
+  }
+
+  const returnee: string[] = [];
+  for (let i = 0; i < str.length; i++) {
+    const currentChar = str[i] as string;
+    if (!setOfTones.has(currentChar)) {
+      continue;
+    }
+
+    const nextChar = str[i + 1];
+    const nextHasVowl = nextChar !== undefined && setOfTones.has(nextChar);
+    if (nextHasVowl) {
+      continue;
+    }
+
+    const pre = str.slice(0, i);
+    const after = str.slice(i + 1);
+    for (const tone of mapOfTones.get(currentChar) ?? []) {
+      returnee.push(`${pre}${tone}${after}`);
+    }
+    break;
+  }
+  return returnee;
+}

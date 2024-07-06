@@ -7,6 +7,7 @@ import "./components/quizzer";
 import "./components/login";
 import "./components/view";
 import "./components/new";
+import "./components/pinyin_selector";
 import "@dile/ui/components/card/card.js";
 import "@dile/ui/components/button/button.js";
 import "@dile/ui/components/button/button-icon.js";
