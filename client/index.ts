@@ -17,6 +17,7 @@ import "@dile/ui/components/modal/modal";
 import "@dile/ui/components/toast/toast";
 import "@doubletrade/lit-datatable/lit-datatable";
 import { SetApp } from "./store";
+import { initializeFirestore, persistentLocalCache } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -33,6 +34,30 @@ const firebaseConfig = {
 document.addEventListener("DOMContentLoaded", async () => {
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
+  initializeFirestore(app, { localCache: persistentLocalCache(/*settings*/ {}) });
   await SetApp(app);
   // const analytics = getAnalytics(app);
 });
+
+const registerServiceWorker = async () => {
+  if ("serviceWorker" in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.register("/service-worker.js", {
+        scope: "/"
+      });
+      if (registration.installing) {
+        console.log("Service worker installing");
+      } else if (registration.waiting) {
+        console.log("Service worker installed");
+      } else if (registration.active) {
+        console.log("Service worker active");
+      }
+    } catch (error) {
+      console.error(`Registration failed with ${error}`);
+    }
+  }
+};
+
+// …
+
+registerServiceWorker();
