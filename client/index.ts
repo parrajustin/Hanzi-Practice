@@ -14,6 +14,7 @@ import "@dile/ui/components/input/input";
 import "@dile/ui/components/pages/pages.js";
 import "@dile/ui/components/tabs/tabs.js";
 import "@dile/ui/components/modal/modal";
+import "@dile/ui/components/toast/toast";
 import "@doubletrade/lit-datatable/lit-datatable";
 import { SetApp } from "./store";
 

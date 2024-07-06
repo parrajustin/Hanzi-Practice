@@ -1,9 +1,11 @@
 import { AddAppCb } from "client/store";
 import { SpacedRepetition } from "client/util/spaced_repetition";
 import type { DocumentData, Firestore, DocumentReference, Timestamp } from "firebase/firestore";
-import { collection, getDocs, getFirestore } from "firebase/firestore";
-import { LitElement, TemplateResult, css, html } from "lit";
+import { addDoc, collection, getDocs, getFirestore, serverTimestamp } from "firebase/firestore";
+import type { TemplateResult } from "lit";
+import { LitElement, css, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
+import type { QuizDetail } from "./quiz";
 
 interface Review {
   id: string;
@@ -21,6 +23,7 @@ interface Hanzi {
   pinyin: string;
   text: string;
   tone: number;
+  selfRef: DocumentReference<DocumentData, DocumentData>;
 }
 
 @customElement("quizzer-element")
@@ -74,7 +77,8 @@ export class QuizzerElement extends LitElement {
           hanzi: data.hanzi,
           pinyin: data.pinyin,
           text: data.text,
-          tone: data.tone
+          tone: data.tone,
+          selfRef: result.ref
         };
         this.hanziChars_.push(charData);
         this.hanzi_.set(result.id, charData);
@@ -92,8 +96,64 @@ export class QuizzerElement extends LitElement {
     console.log("dueCards", this.dueCards_);
   }
 
+  protected async onComplete(e: CustomEvent<QuizDetail>) {
+    console.log("onComplete", e);
+    const hanzi = this.dueCards_[this.dueCardIndex_];
+    if (hanzi === undefined) {
+      const toast = this.shadowRoot?.getElementById("errorToast") as HTMLElement;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (toast as any).open("Complete called but found no hanzi!?", "error");
+      throw new Error("no hanzi found!");
+    }
+    if (this.db_ === undefined) {
+      const toast = this.shadowRoot?.getElementById("errorToast") as HTMLElement;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (toast as any).open("No firestore db found!", "error");
+      throw new Error("no db");
+    }
+
+    let style = "error";
+    let difficulty = 0;
+    if (e.detail.percentMistakes.fraction < 1e-6) {
+      difficulty = 5;
+      style = "success";
+    } else if (e.detail.strokeMistakes === 1) {
+      difficulty = 4;
+      style = "success";
+    } else if (e.detail.percentMistakes.fraction < 0.25) {
+      difficulty = 3;
+      style = "neutral";
+    } else if (e.detail.percentMistakes.fraction < 0.5) {
+      difficulty = 2;
+      style = "neutral";
+    } else if (e.detail.percentMistakes.fraction < 0.75) {
+      difficulty = 1;
+    } else {
+      difficulty = 0;
+    }
+
+    const toastText = `Finished got: ${difficulty}`;
+    const toast = this.shadowRoot?.getElementById("myToast") as HTMLElement;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (toast as any).open(toastText, style);
+    setTimeout(() => {
+      this.dueCardIndex_++;
+    }, 5000);
+    const addPromise = await addDoc(collection(this.db_, "status"), {
+      char: hanzi.selfRef,
+      difficulty,
+      reviewed: serverTimestamp()
+    }).catch((e) => {
+      const toast = this.shadowRoot?.getElementById("errorToast") as HTMLElement;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (toast as any).open("Failed when calling `addDoc` to firestore!", "error");
+      throw new Error(e);
+    });
+    console.log("write review", addPromise);
+  }
+
   protected buildHanziQuiz(): TemplateResult {
-    if (this.dueCards_.length === 0) {
+    if (this.dueCards_.length === 0 || this.dueCardIndex_ === this.dueCards_.length) {
       return html`No cards due!`;
     }
 
@@ -102,12 +162,15 @@ export class QuizzerElement extends LitElement {
       return html`No card found bug???`;
     }
 
-    return html`<quiz-element
-      character="${hanzi.hanzi}"
-      prompt="${hanzi.text}"
-      pinyin="${hanzi.pinyin}"
-      tone="${hanzi.tone}"
-    ></quiz-element>`;
+    return html` <dile-toast id="errorToast" duration="100000"></dile-toast
+      ><dile-toast id="myToast" duration="5000"></dile-toast>
+      <quiz-element
+        character="${hanzi.hanzi}"
+        prompt="${hanzi.text}"
+        pinyin="${hanzi.pinyin}"
+        tone="${hanzi.tone}"
+        @onComplete="${this.onComplete}"
+      ></quiz-element>`;
   }
 
   protected render() {

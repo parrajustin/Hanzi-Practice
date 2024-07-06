@@ -5,6 +5,14 @@ import type { CharacterJson } from "hanzi-writer";
 import HanziWriter from "hanzi-writer";
 import type { Option } from "client/option";
 import { None, Some } from "client/option";
+import { FractionD } from "client/util/fraction";
+
+export interface QuizDetail {
+  // Strokes that had mistakes.
+  strokeMistakes: number;
+  // Percentage of strokes with mistakes.
+  percentMistakes: FractionD;
+}
 
 @customElement("quiz-element")
 export class QuizElement extends LitElement {
@@ -36,6 +44,9 @@ export class QuizElement extends LitElement {
   })
   character: string = "";
 
+  /** The old character. */
+  private oldCharacter = "OLD___";
+
   @property()
   prompt?: string;
 
@@ -55,19 +66,33 @@ export class QuizElement extends LitElement {
 
   /** Hanzi char data. */
   private charData_?: CharacterJson;
-
   /** Number of strokes user has done. */
   @state()
   private strokesDrawn_ = 0;
-
   /** If a hanzi writer instance exists. */
   private writer_: Option<HanziWriter> = None;
+  /** Current stroke num. */
+  private strokeNum_ = -1;
+  /** Number of strokes that have a mistake. */
+  private strokeThatHaveMistakes_ = 0;
 
   async updated() {
     console.log("updated");
-    if (this.writer_.some) {
+    if (this.writer_.some && this.oldCharacter === this.character) {
+      // Old character is the same as the current character. No need to reset.
       return;
     }
+    if (this.writer_.some && this.oldCharacter !== this.character) {
+      this.oldCharacter = this.character;
+      this.strokeNum_ = -1;
+      this.strokeThatHaveMistakes_ = 0;
+      this.strokesDrawn_ = 0;
+      this.writer_.safeValue().cancelQuiz();
+      this.writer_ = None;
+      const oldWriter = this.shadowRoot?.querySelector("svg g") as HTMLElement;
+      oldWriter.parentElement?.removeChild(oldWriter);
+    }
+    this.oldCharacter = this.character;
     const container = this.shadowRoot?.querySelector("#quizContainer");
     if (container === null) {
       return;
@@ -83,6 +108,8 @@ export class QuizElement extends LitElement {
         padding: 5
       })
     );
+    this.strokeNum_ = -1;
+    this.strokeThatHaveMistakes_ = 0;
     this.writer_.safeValue().quiz({
       onMistake: (strokeData) => {
         console.log("Oh no! you made a mistake on stroke " + strokeData.strokeNum);
@@ -94,6 +121,10 @@ export class QuizElement extends LitElement {
           "There are " + strokeData.strokesRemaining + " strokes remaining in this character"
         );
         this.strokesDrawn_++;
+        if (this.strokeNum_ !== strokeData.strokeNum) {
+          this.strokeNum_ = strokeData.strokeNum;
+          this.strokeThatHaveMistakes_++;
+        }
       },
       onCorrectStroke: (strokeData) => {
         console.log("Yes!!! You got stroke " + strokeData.strokeNum + " correct!");
@@ -107,6 +138,17 @@ export class QuizElement extends LitElement {
       onComplete: (summaryData) => {
         console.log("You did it! You finished drawing " + summaryData.character);
         console.log("You made " + summaryData.totalMistakes + " total mistakes on this quiz");
+        const options: CustomEventInit<QuizDetail> = {
+          bubbles: true,
+          composed: true,
+          detail: {
+            strokeMistakes: summaryData.totalMistakes,
+            percentMistakes: new FractionD(
+              this.strokeThatHaveMistakes_ / (this.charData_?.strokes.length ?? 10)
+            )
+          }
+        };
+        this.dispatchEvent(new CustomEvent<QuizDetail>("onComplete", options));
       }
     });
     this.writer_.safeValue().hideOutline();

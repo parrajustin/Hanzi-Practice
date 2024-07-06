@@ -63,12 +63,12 @@ export class LoginElement extends LitElement {
       throw new Error("App undefined...");
     }
 
-    console.log('1');
+    console.log("1");
     const auth = getAuth(app.safeValue());
-    console.log('2');
+    console.log("2");
     setPersistence(auth, indexedDBLocalPersistence)
       .then(() => {
-        console.log('3');
+        console.log("3");
         const provider = new GoogleAuthProvider();
         // In memory persistence will be applied to the signed in Google user
         // even though the persistence was set to 'none' and a page redirect
