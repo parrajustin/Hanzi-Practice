@@ -68,8 +68,16 @@ export class PinyinSelectorElement extends LitElement {
 
   protected render() {
     if (this.oldLine !== this.pinyinLine) {
+      console.log("reset wrong");
       this.wrongGuesses = 0;
       this.oldLine = this.pinyinLine;
+      const quizContainer = this.shadowRoot?.getElementById("quizContainer");
+      if (quizContainer !== undefined && quizContainer !== null) {
+        const nodes = quizContainer.querySelectorAll("dile-button") as NodeListOf<HTMLDivElement>;
+        nodes.forEach((n) => {
+          n.style.outline = "";
+        });
+      }
     }
 
     const pinyinList = this.pinyinLine.split(" ");

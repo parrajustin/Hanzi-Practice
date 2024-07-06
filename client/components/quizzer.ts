@@ -6,6 +6,9 @@ import type { TemplateResult } from "lit";
 import { LitElement, css, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import type { QuizDetail } from "./quiz";
+import type { Option } from "client/option";
+import { None, Some } from "client/option";
+import type { PinyinDetail } from "./pinyin_selector";
 
 interface Review {
   id: string;
@@ -48,6 +51,10 @@ export class QuizzerElement extends LitElement {
   private dueCards_: Hanzi[] = [];
   @state()
   private dueCardIndex_ = 0;
+  private oldDueCardIndex_ = -1;
+
+  private finishedPinyinSelectorMistakes_: Option<number> = None;
+  private finsihedHanziQuiz_: Option<QuizDetail> = None;
 
   constructor() {
     super();
@@ -96,8 +103,13 @@ export class QuizzerElement extends LitElement {
     console.log("dueCards", this.dueCards_);
   }
 
-  protected async onComplete(e: CustomEvent<QuizDetail>) {
-    console.log("onComplete", e);
+  protected async emitCompletion() {
+    if (this.finsihedHanziQuiz_.none || this.finishedPinyinSelectorMistakes_.none) {
+      return;
+    }
+
+    const hanziQuizDetail = this.finsihedHanziQuiz_.safeValue();
+
     const hanzi = this.dueCards_[this.dueCardIndex_];
     if (hanzi === undefined) {
       const toast = this.shadowRoot?.getElementById("errorToast") as HTMLElement;
@@ -114,23 +126,30 @@ export class QuizzerElement extends LitElement {
 
     let style = "error";
     let difficulty = 0;
-    if (e.detail.percentMistakes.fraction < 1e-6) {
+    if (hanziQuizDetail.percentMistakes.fraction < 1e-6) {
       difficulty = 5;
       style = "success";
-    } else if (e.detail.strokeMistakes === 1) {
+    } else if (hanziQuizDetail.strokeMistakes === 1) {
       difficulty = 4;
       style = "success";
-    } else if (e.detail.percentMistakes.fraction < 0.25) {
+    } else if (hanziQuizDetail.percentMistakes.fraction < 0.25) {
       difficulty = 3;
       style = "neutral";
-    } else if (e.detail.percentMistakes.fraction < 0.5) {
+    } else if (hanziQuizDetail.percentMistakes.fraction < 0.5) {
       difficulty = 2;
       style = "neutral";
-    } else if (e.detail.percentMistakes.fraction < 0.75) {
+    } else if (hanziQuizDetail.percentMistakes.fraction < 0.75) {
       difficulty = 1;
     } else {
       difficulty = 0;
     }
+    let maxDifficulty = 5;
+    if (this.finishedPinyinSelectorMistakes_.safeValue() > 1) {
+      maxDifficulty = 3;
+    } else if (this.finishedPinyinSelectorMistakes_.safeValue() === 1) {
+      maxDifficulty = 4;
+    }
+    difficulty = Math.min(difficulty, maxDifficulty);
 
     const toastText = `Finished got: ${difficulty}`;
     const toast = this.shadowRoot?.getElementById("myToast") as HTMLElement;
@@ -152,6 +171,16 @@ export class QuizzerElement extends LitElement {
     console.log("write review", addPromise);
   }
 
+  protected async onComplete(e: CustomEvent<QuizDetail>) {
+    this.finsihedHanziQuiz_ = Some(e.detail);
+    await this.emitCompletion();
+  }
+
+  protected async onCompletePinyin(e: CustomEvent<PinyinDetail>) {
+    this.finishedPinyinSelectorMistakes_ = Some(e.detail.mistakes);
+    await this.emitCompletion();
+  }
+
   protected buildHanziQuiz(): TemplateResult {
     if (this.dueCards_.length === 0 || this.dueCardIndex_ === this.dueCards_.length) {
       return html`No cards due!`;
@@ -171,10 +200,19 @@ export class QuizzerElement extends LitElement {
         tone="${hanzi.tone}"
         @onComplete="${this.onComplete}"
       ></quiz-element>
-      <pinyin-selector-element pinyinLine="${hanzi.pinyin}"></pinyin-selector-element>`;
+      <pinyin-selector-element
+        pinyinLine="${hanzi.pinyin}"
+        @onComplete="${this.onCompletePinyin}"
+      ></pinyin-selector-element>`;
   }
 
   protected render() {
+    if (this.oldDueCardIndex_ !== this.dueCardIndex_) {
+      this.oldDueCardIndex_ = this.dueCardIndex_;
+      this.finishedPinyinSelectorMistakes_ = None;
+      this.finsihedHanziQuiz_ = None;
+    }
+
     const quizlet = this.buildHanziQuiz();
     return html`<div class="u-full-height">${quizlet}</div>`;
   }
