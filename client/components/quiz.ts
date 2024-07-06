@@ -75,14 +75,32 @@ export class QuizElement extends LitElement {
   private strokeNum_ = -1;
   /** Number of strokes that have a mistake. */
   private strokeThatHaveMistakes_ = 0;
+  /** User chose to give up. */
+  @state()
+  private gaveUp_ = false;
+  private setupGaveUp = false;
 
   async updated() {
+    
     console.log("updated");
-    if (this.writer_.some && this.oldCharacter === this.character) {
-      // Old character is the same as the current character. No need to reset.
+    if (
+      this.writer_.some &&
+      this.oldCharacter === this.character &&
+      (!this.gaveUp_ || (this.gaveUp_ && this.setupGaveUp))
+    ) {
+      // No need to setup if:
+      // - We are not in gave up mode, and old char === current char.
+      // - We are in gave up mode, have already setup the mode, and old char === current char.
       return;
     }
+
+    //
+    // RESET WRITER.
+    //
+
+    // Reset if the new character is different.
     if (this.writer_.some && this.oldCharacter !== this.character) {
+      console.log("Updated reset whole quiz");
       this.oldCharacter = this.character;
       this.strokeNum_ = -1;
       this.strokeThatHaveMistakes_ = 0;
@@ -91,8 +109,37 @@ export class QuizElement extends LitElement {
       this.writer_ = None;
       const oldWriter = this.shadowRoot?.querySelector("svg g") as HTMLElement;
       oldWriter.parentElement?.removeChild(oldWriter);
+
+      // reset giveup mode stuff.
+      const giveUpStrokes = this.shadowRoot?.getElementById("strokesDiv") as HTMLDivElement;
+      giveUpStrokes.innerHTML = "";
+      this.gaveUp_ = false;
+      this.setupGaveUp = false;
+    }
+    if (
+      this.writer_.some &&
+      this.oldCharacter === this.character &&
+      this.gaveUp_ &&
+      !this.setupGaveUp
+    ) {
+      console.log("Updated reset for giveup");
+      this.oldCharacter = this.character;
+      this.strokeNum_ = -1;
+      this.strokeThatHaveMistakes_ = 0;
+      this.strokesDrawn_ = 0;
+      this.writer_.safeValue().cancelQuiz();
+      this.writer_ = None;
+      const oldWriter = this.shadowRoot?.querySelector("svg g") as HTMLElement;
+      oldWriter.parentElement?.removeChild(oldWriter);
+
+      // setup giveup mode.
+      this.setupGaveUp = true;
     }
     this.oldCharacter = this.character;
+
+    //
+    // SETUP WRITER.
+    //
     const container = this.shadowRoot?.querySelector("#quizContainer");
     if (container === null) {
       return;
@@ -142,16 +189,24 @@ export class QuizElement extends LitElement {
           bubbles: true,
           composed: true,
           detail: {
-            strokeMistakes: summaryData.totalMistakes,
+            strokeMistakes: this.gaveUp_
+              ? this.charData_?.strokes.length ?? 10
+              : summaryData.totalMistakes,
             percentMistakes: new FractionD(
-              this.strokeThatHaveMistakes_ / (this.charData_?.strokes.length ?? 10)
+              this.gaveUp_
+                ? 1.0
+                : this.strokeThatHaveMistakes_ / (this.charData_?.strokes.length ?? 10)
             )
           }
         };
         this.dispatchEvent(new CustomEvent<QuizDetail>("onComplete", options));
       }
     });
-    this.writer_.safeValue().hideOutline();
+    if (this.gaveUp_) {
+      this.writer_.safeValue().showOutline();
+    } else {
+      this.writer_.safeValue().hideOutline();
+    }
   }
 
   /**
@@ -193,6 +248,42 @@ export class QuizElement extends LitElement {
     super.scheduleUpdate();
   }
 
+  protected giveUp() {
+    const renderFanningStrokes = (target: HTMLElement, strokes: string[]) => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.style.width = "75px";
+      svg.style.height = "75px";
+      svg.style.border = "1px solid #EEE";
+      svg.style.marginRight = "3px";
+      target.appendChild(svg);
+      const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+      // set the transform property on the g element so the character renders at 75x75
+      const transformData = HanziWriter.getScalingTransform(75, 75);
+      group.setAttributeNS(null, "transform", transformData.transform);
+      svg.appendChild(group);
+
+      strokes.forEach((strokePath) => {
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttributeNS(null, "d", strokePath);
+        // style the character paths
+        path.style.fill = "#555";
+        group.appendChild(path);
+      });
+    };
+
+    const target = this.shadowRoot?.getElementById("strokesDiv") as HTMLDivElement;
+    target.innerHTML = "";
+    console.log("target giveup", target);
+    if (this.charData_ !== undefined) {
+      for (let i = 0; i < this.charData_.strokes.length; i++) {
+        const strokesPortion = this.charData_.strokes.slice(0, i + 1);
+        renderFanningStrokes(target, strokesPortion);
+      }
+    }
+    this.gaveUp_ = true;
+  }
+
   protected render() {
     const w = Math.min(window.innerWidth, 960);
     const h = window.innerHeight;
@@ -213,7 +304,10 @@ export class QuizElement extends LitElement {
         </div>
         <div id="drawing">${svgOutline}</div>
 
+        <div id="strokesDiv"></div>
         <div slot="footer">
+          <dile-button @click="${this.giveUp}">Give up!</dile-button>
+          ${this.gaveUp_ ? html`<span>Gave up mode...</span>` : html``}
           <span>Total Strokes ${strokeCount}</span>
           <span>Correct Strokes ${this.strokesDrawn_}</span>
         </div>
