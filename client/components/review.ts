@@ -18,6 +18,8 @@ interface Review {
   id: string;
   /** The hanzi the review is for. */
   char: string;
+  /** The pinyin the review is for. */
+  pinyin: string;
   /** The hanzi id in firestore. */
   cardId: DocumentReference<DocumentData, DocumentData>;
   /** The assigned difficult for this review. */
@@ -76,7 +78,8 @@ export class ReviewViewElement extends LitElement {
 
         reviews.push({
           id: result.id,
-          char: hanziElement?.hanzi,
+          char: hanziElement.hanzi,
+          pinyin: hanziElement.pinyin,
           cardId: data.char,
           difficulty: data.difficulty,
           timestamp: data.reviewed.toMillis(),
@@ -119,6 +122,7 @@ export class ReviewViewElement extends LitElement {
     const conf = [
       { property: "id", header: "ID", hidden: true },
       { property: "char", header: "Hanzi", hidden: false },
+      { property: "pinyin", header: "Pinyin", hidden: false },
       { property: "cardId", header: "CardId", hidden: true },
       { property: "difficulty", header: "Difficulty", hidden: false },
       { property: "timestamp", header: "Timestamp", hidden: false },
