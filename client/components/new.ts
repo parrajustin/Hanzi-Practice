@@ -1,11 +1,13 @@
+import type { FirestoreHanziDocument } from "client/db/hanzi";
 import type { Option } from "client/option";
 import { None, Some } from "client/option";
 import { AddAppCb } from "client/store";
 import type { Token, TokenMatches, TokenizerFn } from "client/tokenizer/chinse_tokenizer";
 import { CreateChineseTokenizer } from "client/tokenizer/chinse_tokenizer";
 import type { Firestore } from "firebase/firestore";
-import { addDoc, collection, doc, getFirestore, setDoc } from "firebase/firestore";
-import { LitElement, TemplateResult, css, html } from "lit";
+import { addDoc, collection, getDocs, getFirestore } from "firebase/firestore";
+import type { TemplateResult } from "lit";
+import { LitElement, css, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 interface DileInputChangedDetail {
@@ -17,14 +19,16 @@ interface DileInputChangedEvent extends CustomEvent {
   detail: DileInputChangedDetail;
 }
 
+interface ExtendedTokenMatches extends TokenMatches {
+  /** If it already exists in the store. */
+  existingEntry: boolean;
+}
+
 @customElement("creator-element")
 export class CreatorElement extends LitElement {
   static styles = css`
     :host {
       --dile-modal-width: 90vw;
-    }
-    .u-full-height {
-      height: 100%;
     }
   `;
 
@@ -33,6 +37,8 @@ export class CreatorElement extends LitElement {
   private tokenizer_: Option<TokenizerFn> = None;
   /** Hanzi input. */
   private hanzi_ = "";
+  /** Existing hanzi with chars. */
+  private existingHanzi_ = new Set<string>();
 
   @state()
   private tokens_: Token[] = [];
@@ -49,6 +55,12 @@ export class CreatorElement extends LitElement {
         return;
       }
       this.tokenizer_ = Some(createResult.safeUnwrap());
+
+      const hanzi = await getDocs(collection(this.db_, "hanzi"));
+      hanzi.forEach((result) => {
+        const data = result.data() as FirestoreHanziDocument;
+        this.existingHanzi_.add(`${data.hanzi}-${data.pinyin}`);
+      });
     });
   }
 
@@ -60,11 +72,13 @@ export class CreatorElement extends LitElement {
     }
 
     let success = true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hanzi = (this.shadowRoot?.getElementById("hanzi") as any).value;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pinyin = (this.shadowRoot?.getElementById("pinyin") as any).value;
     const addPromise = await addDoc(collection(this.db_, "hanzi"), {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      hanzi: (this.shadowRoot?.getElementById("hanzi") as any).value,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      pinyin: (this.shadowRoot?.getElementById("pinyin") as any).value,
+      hanzi,
+      pinyin,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       text: (this.shadowRoot?.getElementById("prompt") as any).value,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -74,6 +88,7 @@ export class CreatorElement extends LitElement {
       const toast = this.shadowRoot?.getElementById("myToast") as HTMLElement;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (toast as any).open("Failed when calling `addDoc` to firestore!", "error");
+      success = false;
     });
     console.log("addPromise", addPromise);
     if (success) {
@@ -83,6 +98,7 @@ export class CreatorElement extends LitElement {
         `Added ${(this.shadowRoot?.getElementById("hanzi") as HTMLInputElement).value}!`,
         "success"
       );
+      this.existingHanzi_.add(`${hanzi}-${pinyin}`);
     }
   }
 
@@ -111,37 +127,52 @@ export class CreatorElement extends LitElement {
     (this.shadowRoot?.getElementById("elmodal") as any | undefined)?.close();
   }
 
-  protected getMatches(): TokenMatches[] {
+  protected getMatches(): ExtendedTokenMatches[] {
     if (this.tokens_.length === 1) {
-      return this.tokens_[0]?.matches ?? [];
+      return (
+        this.tokens_[0]?.matches.map((v): ExtendedTokenMatches => {
+          return {
+            ...v,
+            existingEntry: this.existingHanzi_.has(`${this.hanzi_}-${v.prettyPinyin}`)
+          };
+        }) ?? []
+      );
     }
     return [];
   }
 
   protected render() {
+    const getButton = (match: ExtendedTokenMatches) => {
+      if (!match.existingEntry) {
+        return html`<dile-button
+          @click="${() => {
+            this.updateInput(
+              match.prettyPinyin,
+              match.english,
+              parseInt(match.pinyin[match.pinyin.length - 1] ?? "4")
+            );
+          }}"
+          >Select ${match.prettyPinyin}</dile-button
+        >`;
+      }
+      return html`(Already Added...)`;
+    };
+    const getText = (match: ExtendedTokenMatches) => {
+      return html`<span style="margin: 5px">TonePinyin: ${match.pinyin}</span
+        ><span style="margin: 5px">Pinyin: ${match.prettyPinyin}</span
+        ><span style="margin: 5px">English: ${match.english}</span>`;
+    };
     return html`<dile-modal class="modalbox" id="elmodal">
         <h2>Found the following examples:</h2>
 
         <ul>
           ${this.getMatches().map((matches): TemplateResult => {
-            return html`<li>
-              <dile-button
-                @click="${() => {
-                  this.updateInput(
-                    matches.prettyPinyin,
-                    matches.english,
-                    parseInt(matches.pinyin[matches.pinyin.length - 1] ?? "4")
-                  );
-                }}"
-                >Select ${matches.prettyPinyin}</dile-button
-              >
-              ${JSON.stringify(matches)}
-            </li>`;
+            return html`<li>${getButton(matches)}${getText(matches)}</li>`;
           })}
         </ul>
       </dile-modal>
       <dile-toast id="myToast" duration="1000"></dile-toast>
-      <div class="u-full-height">
+      <div>
         <dile-card shadow-md title="Character Creator">
           <div id="quizContainer">
             <dile-input
