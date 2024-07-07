@@ -22,7 +22,6 @@ export class RouterElement extends LitElement {
     }
     #router {
       width: 100%;
-      height: 100%;
     }
   `;
 

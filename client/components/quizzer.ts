@@ -9,6 +9,7 @@ import type { QuizDetail } from "./quiz";
 import type { Option } from "client/option";
 import { None, Some } from "client/option";
 import type { PinyinDetail } from "./pinyin_selector";
+import { Shuffle } from "client/util/shuffle";
 
 interface Review {
   id: string;
@@ -100,6 +101,7 @@ export class QuizzerElement extends LitElement {
     this.dueCards_ = this.spacedRepetitionSystem
       .getDueCards(this.hanziChars_, this.reviews_)
       .map((v) => v[0]) as unknown as Hanzi[];
+    Shuffle(this.dueCards_);
     console.log("dueCards", this.dueCards_);
   }
 
@@ -214,7 +216,7 @@ export class QuizzerElement extends LitElement {
     }
 
     const quizlet = this.buildHanziQuiz();
-    return html`<div class="u-full-height">${quizlet}</div>`;
+    return html`<div>${quizlet}</div>`;
   }
 }
 
