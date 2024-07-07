@@ -8,6 +8,7 @@ import "./components/login";
 import "./components/view";
 import "./components/new";
 import "./components/pinyin_selector";
+import "./components/review";
 import "@dile/ui/components/card/card.js";
 import "@dile/ui/components/button/button.js";
 import "@dile/ui/components/button/button-icon.js";
@@ -17,6 +18,7 @@ import "@dile/ui/components/tabs/tabs.js";
 import "@dile/ui/components/modal/modal";
 import "@dile/ui/components/toast/toast";
 import "@doubletrade/lit-datatable/lit-datatable";
+import "@doubletrade/lit-datatable/lit-datatable-column";
 import { SetApp } from "./store";
 import { initializeFirestore, persistentLocalCache } from "firebase/firestore";
 

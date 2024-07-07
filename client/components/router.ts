@@ -54,6 +54,7 @@ export class RouterElement extends LitElement {
             <dile-tab>Quiz</dile-tab>
             <dile-tab>New</dile-tab>
             <dile-tab>View</dile-tab>
+            <dile-tab>Reviews</dile-tab>
           </dile-tabs>
           <hr />
           <dile-pages selectorId="selector1">
@@ -65,6 +66,9 @@ export class RouterElement extends LitElement {
             </section>
             <section name="view">
               <viewer-element></viewer-element>
+            </section>
+            <section name="reviews">
+              <review-veiwer-element></review-veiwer-element>
             </section>
           </dile-pages>`;
         break;
