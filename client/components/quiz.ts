@@ -286,6 +286,15 @@ export class QuizElement extends LitElement {
     this.gaveUp_ = true;
   }
 
+  protected resetQuiz() {
+    this.gaveUp_ = false;
+    this.setupGaveUp = false;
+    this.strokesDrawn_ = 0;
+    this.oldCharacter = "____";
+    this.strokeNum_ = -1;
+    this.strokeThatHaveMistakes_ = 0;
+  }
+
   protected render() {
     const w = Math.min(window.innerWidth, 960);
     const h = window.innerHeight;
@@ -309,6 +318,7 @@ export class QuizElement extends LitElement {
         <div id="strokesDiv"></div>
         <div slot="footer">
           <dile-button @click="${this.giveUp}">Give up!</dile-button>
+          <dile-button @click="${this.resetQuiz}">Reset!</dile-button>
           ${this.gaveUp_ ? html`<span>Gave up mode...</span>` : html``}
           <span>Total Strokes ${strokeCount}</span>
           <span>Correct Strokes ${this.strokesDrawn_}</span>
