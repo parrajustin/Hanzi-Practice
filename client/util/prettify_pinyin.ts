@@ -65,17 +65,16 @@ export function PrettifyPinyin(str: string) {
 }
 
 export function ConstructOtherOptions(str: string): string[] {
-  const setOfTones = new Set<string>();
+  const charWithTones = new Set<string>();
   const mapOfTones = new Map<string, string[]>();
   const keys = Object.keys(replacements) as unknown as ("a" | "e" | "u" | "i" | "o" | "ü")[];
   for (const key of keys) {
-    const allTones: string[] = [];
     const tones = replacements[key];
+    const allTones: string[] = [];
     allTones.push(key);
-    setOfTones.add(key);
     for (const tone of tones) {
+      charWithTones.add(tone);
       allTones.push(tone);
-      setOfTones.add(tone);
     }
 
     for (const tone of allTones) {
@@ -84,25 +83,40 @@ export function ConstructOtherOptions(str: string): string[] {
     }
   }
 
-  const returnee: string[] = [];
+  let charToReplace = "";
   for (let i = 0; i < str.length; i++) {
-    const currentChar = str[i] as string;
-    if (!setOfTones.has(currentChar)) {
+    const char = str[i] as string;
+    const isNonToneVowel = (keys as string[]).indexOf(char) !== -1;
+    const isToneVowel = charWithTones.has(char);
+
+    const nextChar = str[i + 1] ?? "";
+    const nextIsNonVowel = (keys as string[]).indexOf(nextChar) !== -1;
+    const nextIsToneVowel = charWithTones.has(nextChar);
+    const nextIsMedial = medials.indexOf(nextChar) >= 0;
+    if (isToneVowel) {
+      // The current character is a toned char.
+      charToReplace = char;
+      break;
+    } else if (isNonToneVowel && !nextIsNonVowel && !nextIsToneVowel) {
+      // The current character is non toned and the next is not a vowel.
+      charToReplace = char;
+      break;
+    } else if (isNonToneVowel && !nextIsNonVowel && nextIsToneVowel) {
+      // The next vowel has a tone move on.
+      continue;
+    } else if (isNonToneVowel && nextIsNonVowel && !nextIsToneVowel && !nextIsMedial) {
+      // The next vowel doesn't have a tone, and isn't medial.
+      charToReplace = char;
+      break;
+    } else {
       continue;
     }
+  }
 
-    const nextChar = str[i + 1];
-    const nextHasVowl = nextChar !== undefined && setOfTones.has(nextChar);
-    if (nextHasVowl) {
-      continue;
-    }
-
-    const pre = str.slice(0, i);
-    const after = str.slice(i + 1);
-    for (const tone of mapOfTones.get(currentChar) ?? []) {
-      returnee.push(`${pre}${tone}${after}`);
-    }
-    break;
+  const returnee: string[] = [];
+  const tonesToReplaceWith = mapOfTones.get(charToReplace) ?? [];
+  for (const tone of tonesToReplaceWith) {
+    returnee.push(str.replace(charToReplace, tone));
   }
   return returnee;
 }
