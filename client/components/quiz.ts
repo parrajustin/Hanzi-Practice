@@ -1,11 +1,13 @@
-import type { TemplateResult } from "lit";
+import type { PropertyDeclaration, TemplateResult } from "lit";
 import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import type { CharacterJson } from "hanzi-writer";
+import type { CharacterJson, StrokeData } from "hanzi-writer";
 import HanziWriter from "hanzi-writer";
 import type { Option } from "client/option";
 import { None, Some } from "client/option";
 import { FractionD } from "client/util/fraction";
+import { Immutable, castImmutable, produce, castDraft } from "immer";
+import { WrapPromise } from "client/util/wrap_promise";
 
 export interface QuizDetail {
   // Strokes that had mistakes.
@@ -13,6 +15,50 @@ export interface QuizDetail {
   // Percentage of strokes with mistakes.
   percentMistakes: FractionD;
 }
+
+enum QuizState {
+  /** Default starting unknown state. */
+  UnknownQuizState,
+  /** Normal quiz state. User try quiz and results are retruned. */
+  NormalQuiz,
+  /** First state in gave up. User is informed of shape and made to try. */
+  GaveUpInform,
+  /** Second state in gave up. User has to put in character and get difficult at least 4. */
+  GaveUpPractice,
+  /** Some error happened. */
+  ErrorState
+}
+
+interface QuizDataState {
+  /** Old character the quiz started on. */
+  oldCharacter: string;
+  /** Hanzi char data. */
+  charData: Option<{ char: string; loadedData: CharacterJson }>;
+  /** The current stroke the user is on. */
+  strokeNumber: number;
+  /** Number of strokes user has done. */
+  strokesDrawn: number;
+  /** Number of strokes that have a mistake. */
+  strokesThatHaveMistakes: number;
+  /** The wanted quiz state. */
+  wantQuizState: QuizState;
+  /** The current quiz state. */
+  quizState: QuizState;
+  /** The error message if any. */
+  errorMessage: string;
+}
+
+type ReadonlyState = Immutable<QuizDataState>;
+const DEFAULT_STATE: ReadonlyState = castImmutable<QuizDataState>({
+  oldCharacter: "__OLD__",
+  charData: None,
+  strokeNumber: -1,
+  strokesDrawn: 0,
+  strokesThatHaveMistakes: 0,
+  wantQuizState: QuizState.NormalQuiz,
+  quizState: QuizState.UnknownQuizState,
+  errorMessage: ""
+});
 
 @customElement("quiz-element")
 export class QuizElement extends LitElement {
@@ -47,9 +93,6 @@ export class QuizElement extends LitElement {
   })
   character: string = "";
 
-  /** The old character. */
-  private oldCharacter = "OLD___";
-
   @property()
   prompt?: string;
 
@@ -66,88 +109,171 @@ export class QuizElement extends LitElement {
   tone?: number;
 
   private maxDimension_ = 0;
-
-  /** Hanzi char data. */
-  private charData_?: CharacterJson;
-  /** Number of strokes user has done. */
   @state()
-  private strokesDrawn_ = 0;
+  state: ReadonlyState = DEFAULT_STATE;
   /** If a hanzi writer instance exists. */
   private writer_: Option<HanziWriter> = None;
-  /** Current stroke num. */
-  private strokeNum_ = -1;
-  /** Number of strokes that have a mistake. */
-  private strokeThatHaveMistakes_ = 0;
-  /** User chose to give up. */
-  @state()
-  private gaveUp_ = false;
-  private setupGaveUp = false;
+
+  /** Render the character steps. */
+  private renderCharacterSteps() {
+    const renderFanningStrokes = (target: HTMLElement, strokes: string[]) => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.style.width = "75px";
+      svg.style.height = "75px";
+      svg.style.border = "1px solid #EEE";
+      svg.style.marginRight = "3px";
+      target.appendChild(svg);
+      const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+      // set the transform property on the g element so the character renders at 75x75
+      const transformData = HanziWriter.getScalingTransform(75, 75);
+      group.setAttributeNS(null, "transform", transformData.transform);
+      svg.appendChild(group);
+
+      strokes.forEach((strokePath) => {
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttributeNS(null, "d", strokePath);
+        // style the character paths
+        path.style.fill = "#555";
+        group.appendChild(path);
+      });
+    };
+
+    const target = this.shadowRoot?.getElementById("strokesDiv") as HTMLDivElement;
+    target.innerHTML = "";
+    if (this.state.charData.some) {
+      for (let i = 0; i < this.state.charData.safeValue().loadedData.strokes.length; i++) {
+        const strokesPortion = this.state.charData.safeValue().loadedData.strokes.slice(0, i + 1);
+        renderFanningStrokes(target, strokesPortion);
+      }
+    } else {
+      this.state = castImmutable<ReadonlyState>(
+        produce<QuizDataState>(castDraft(this.state), (base) => {
+          base.wantQuizState = QuizState.ErrorState;
+          base.errorMessage = `Error: trying to render "renderCharacterSteps" but no char data!`;
+        })
+      );
+    }
+  }
+
+  /** Removes character steps if there is any. */
+  private removeCharacterSteps() {
+    const giveUpStrokes = this.shadowRoot?.getElementById("strokesDiv") as HTMLDivElement;
+    giveUpStrokes.innerHTML = "";
+  }
+
+  /** When cleaning up a quiz writer it leaves behind an svg element. We need to remove it. */
+  private removeOldWriterOutline() {
+    const oldWriter = this.shadowRoot?.querySelector("svg g") as HTMLElement;
+    if (oldWriter !== undefined && oldWriter !== null) {
+      oldWriter.parentElement?.removeChild(oldWriter);
+    }
+  }
 
   async updated() {
-    console.log("updated");
     if (
-      this.writer_.some &&
-      this.oldCharacter === this.character &&
-      (!this.gaveUp_ || (this.gaveUp_ && this.setupGaveUp))
+      this.state.quizState === this.state.wantQuizState &&
+      this.state.oldCharacter === this.character
     ) {
-      // No need to setup if:
-      // - We are not in gave up mode, and old char === current char.
-      // - We are in gave up mode, have already setup the mode, and old char === current char.
+      // No update needed.
       return;
     }
 
-    //
-    // RESET WRITER.
-    //
+    // Clean up.
+    this.removeCharacterSteps();
+    this.removeOldWriterOutline();
+    this.writer_ = this.writer_.andThen((v) => {
+      v.cancelQuiz();
+      return Some(v);
+    });
 
-    // Reset if the new character is different.
-    if (this.writer_.some && this.oldCharacter !== this.character) {
-      console.log("Updated reset whole quiz");
-      this.oldCharacter = this.character;
-      this.strokeNum_ = -1;
-      this.strokeThatHaveMistakes_ = 0;
-      this.strokesDrawn_ = 0;
-      this.writer_.safeValue().cancelQuiz();
-      this.writer_ = None;
-      const oldWriter = this.shadowRoot?.querySelector("svg g") as HTMLElement;
-      oldWriter.parentElement?.removeChild(oldWriter);
+    const resetStroke = produce<QuizDataState>((base: QuizDataState) => {
+      base.strokeNumber = -1;
+      base.strokesThatHaveMistakes = 0;
+      base.strokesDrawn = 0;
+    });
 
-      // reset giveup mode stuff.
-      const giveUpStrokes = this.shadowRoot?.getElementById("strokesDiv") as HTMLDivElement;
-      giveUpStrokes.innerHTML = "";
-      this.gaveUp_ = false;
-      this.setupGaveUp = false;
-    }
-    if (
-      this.writer_.some &&
-      this.oldCharacter === this.character &&
-      this.gaveUp_ &&
-      !this.setupGaveUp
-    ) {
-      console.log("Updated reset for giveup");
-      this.oldCharacter = this.character;
-      this.strokeNum_ = -1;
-      this.strokeThatHaveMistakes_ = 0;
-      this.strokesDrawn_ = 0;
-      this.writer_.safeValue().cancelQuiz();
-      this.writer_ = None;
-      const oldWriter = this.shadowRoot?.querySelector("svg g") as HTMLElement;
-      oldWriter.parentElement?.removeChild(oldWriter);
+    const normalOnMistake = (strokeData: StrokeData) => {
+      this.state = castImmutable<ReadonlyState>(
+        produce<QuizDataState>(castDraft(this.state), (base) => {
+          base.strokesDrawn++;
+          if (base.strokeNumber !== strokeData.strokeNum) {
+            base.strokeNumber = strokeData.strokeNum;
+            base.strokesThatHaveMistakes++;
+          }
+        })
+      );
+    };
+    const normalOnCorrect = () => {
+      this.state = castImmutable<ReadonlyState>(
+        produce<QuizDataState>(castDraft(this.state), (base) => {
+          base.strokesDrawn++;
+        })
+      );
+    };
+    const normalOnComplete = (summary: { character: string; totalMistakes: number }) => {
+      const options: CustomEventInit<QuizDetail> = {
+        bubbles: true,
+        composed: true,
+        detail: {
+          strokeMistakes: summary.totalMistakes,
+          percentMistakes: new FractionD(
+            this.state.strokesThatHaveMistakes /
+              this.state.charData.andThen((val) => Some(val.loadedData.strokes.length)).valueOr(10)
+          )
+        }
+      };
+      this.dispatchEvent(new CustomEvent<QuizDetail>("onComplete", options));
+    };
+    const gaveUpInstructionOnComplete = () => {
+      // On complete of the instruction mode go to practice.
+      this.state = castImmutable<ReadonlyState>(
+        produce<QuizDataState>(resetStroke(castDraft(this.state)), (base) => {
+          base.wantQuizState = QuizState.GaveUpPractice;
+        })
+      );
+    };
+    const gaveUpPracticeOnComplete = () => {
+      const percentMistakes = new FractionD(
+        this.state.strokesThatHaveMistakes /
+          this.state.charData.andThen((val) => Some(val.loadedData.strokes.length)).valueOr(10)
+      );
+      if (percentMistakes.fraction > 0.25) {
+        // If user failed to get 75% correct go back to instruction.
+        this.state = castImmutable<ReadonlyState>(
+          produce<QuizDataState>(resetStroke(castDraft(this.state)), (base) => {
+            base.wantQuizState = QuizState.GaveUpInform;
+          })
+        );
+        return;
+      }
 
-      // setup giveup mode.
-      this.setupGaveUp = true;
-    }
-    this.oldCharacter = this.character;
+      // Otherwise return the default gave up on complete message.
+      const options: CustomEventInit<QuizDetail> = {
+        bubbles: true,
+        composed: true,
+        detail: {
+          strokeMistakes: this.state.charData
+            .andThen((val) => Some(val.loadedData.strokes.length))
+            .valueOr(100),
+          percentMistakes: new FractionD(1.0)
+        }
+      };
+      this.dispatchEvent(new CustomEvent<QuizDetail>("onComplete", options));
+      this.state = castImmutable<ReadonlyState>(
+        produce<QuizDataState>(resetStroke(castDraft(this.state)), (base) => {
+          base.wantQuizState = QuizState.NormalQuiz;
+        })
+      );
+    };
 
     //
     // SETUP WRITER.
     //
-    const container = this.shadowRoot?.querySelector("#quizContainer");
-    if (container === null) {
-      return;
-    }
 
-    const element = this.shadowRoot?.querySelector("svg") as unknown as HTMLElement;
+    const element = this.shadowRoot?.getElementById(
+      "grid-background-target"
+    ) as unknown as HTMLElement;
     this.writer_ = Some(
       HanziWriter.create(element, this.character, {
         width: this.maxDimension_,
@@ -157,58 +283,38 @@ export class QuizElement extends LitElement {
         padding: 5
       })
     );
-    this.strokeNum_ = -1;
-    this.strokeThatHaveMistakes_ = 0;
+    let funcOnComplete = normalOnComplete;
+    switch (this.state.wantQuizState) {
+      case QuizState.UnknownQuizState:
+        funcOnComplete = () => {};
+        break;
+      case QuizState.ErrorState:
+      case QuizState.NormalQuiz:
+        break;
+      case QuizState.GaveUpInform:
+        funcOnComplete = gaveUpInstructionOnComplete;
+        break;
+      case QuizState.GaveUpPractice:
+        funcOnComplete = gaveUpPracticeOnComplete;
+        break;
+    }
     this.writer_.safeValue().quiz({
-      onMistake: (strokeData) => {
-        console.log("Oh no! you made a mistake on stroke " + strokeData.strokeNum);
-        console.log(
-          "You've made " + strokeData.mistakesOnStroke + " mistakes on this stroke so far"
-        );
-        console.log("You've made " + strokeData.totalMistakes + " total mistakes on this quiz");
-        console.log(
-          "There are " + strokeData.strokesRemaining + " strokes remaining in this character"
-        );
-        this.strokesDrawn_++;
-        if (this.strokeNum_ !== strokeData.strokeNum) {
-          this.strokeNum_ = strokeData.strokeNum;
-          this.strokeThatHaveMistakes_++;
-        }
-      },
-      onCorrectStroke: (strokeData) => {
-        console.log("Yes!!! You got stroke " + strokeData.strokeNum + " correct!");
-        console.log("You made " + strokeData.mistakesOnStroke + " mistakes on this stroke");
-        console.log("You've made " + strokeData.totalMistakes + " total mistakes on this quiz");
-        console.log(
-          "There are " + strokeData.strokesRemaining + " strokes remaining in this character"
-        );
-        this.strokesDrawn_++;
-      },
-      onComplete: (summaryData) => {
-        console.log("You did it! You finished drawing " + summaryData.character);
-        console.log("You made " + summaryData.totalMistakes + " total mistakes on this quiz");
-        const options: CustomEventInit<QuizDetail> = {
-          bubbles: true,
-          composed: true,
-          detail: {
-            strokeMistakes: this.gaveUp_
-              ? this.charData_?.strokes.length ?? 10
-              : summaryData.totalMistakes,
-            percentMistakes: new FractionD(
-              this.gaveUp_
-                ? 1.0
-                : this.strokeThatHaveMistakes_ / (this.charData_?.strokes.length ?? 10)
-            )
-          }
-        };
-        this.dispatchEvent(new CustomEvent<QuizDetail>("onComplete", options));
-      }
+      onMistake: normalOnMistake,
+      onCorrectStroke: normalOnCorrect,
+      onComplete: funcOnComplete
     });
-    if (this.gaveUp_) {
+    if (this.state.wantQuizState === QuizState.GaveUpInform) {
       this.writer_.safeValue().showOutline();
+      this.renderCharacterSteps();
     } else {
       this.writer_.safeValue().hideOutline();
     }
+    this.state = castImmutable<ReadonlyState>(
+      produce<QuizDataState>(resetStroke(castDraft(this.state)), (base) => {
+        base.quizState = base.wantQuizState;
+        base.oldCharacter = this.character;
+      })
+    );
   }
 
   /**
@@ -243,56 +349,64 @@ export class QuizElement extends LitElement {
   }
 
   protected override async scheduleUpdate(): Promise<void> {
-    const charData = await HanziWriter.loadCharacterData(this.character);
-    if (charData) {
-      this.charData_ = charData;
+    // Only try to load the hanzi char data if we haven't already or if the old char does not equal the new char.
+    if (
+      this.state.wantQuizState !== QuizState.ErrorState &&
+      (this.state.charData.none || this.state.charData.safeValue().char != this.character)
+    ) {
+      const charData = await WrapPromise<CharacterJson, Error>(
+        HanziWriter.loadCharacterData(this.character) as Promise<CharacterJson>
+      );
+      if (charData.ok) {
+        this.state = castImmutable<ReadonlyState>(
+          produce<QuizDataState>(castDraft(this.state), (base) => {
+            base.charData = Some({ char: this.character, loadedData: charData.safeUnwrap() });
+          })
+        );
+      } else {
+        this.state = castImmutable<ReadonlyState>(
+          produce<QuizDataState>(castDraft(this.state), (base) => {
+            base.wantQuizState = QuizState.ErrorState;
+            base.errorMessage = `Error: ${charData.val}`;
+          })
+        );
+      }
     }
     super.scheduleUpdate();
   }
 
+  /** User has chosen to give up. Change state to represent that. */
   protected giveUp() {
-    const renderFanningStrokes = (target: HTMLElement, strokes: string[]) => {
-      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.style.width = "75px";
-      svg.style.height = "75px";
-      svg.style.border = "1px solid #EEE";
-      svg.style.marginRight = "3px";
-      target.appendChild(svg);
-      const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-
-      // set the transform property on the g element so the character renders at 75x75
-      const transformData = HanziWriter.getScalingTransform(75, 75);
-      group.setAttributeNS(null, "transform", transformData.transform);
-      svg.appendChild(group);
-
-      strokes.forEach((strokePath) => {
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttributeNS(null, "d", strokePath);
-        // style the character paths
-        path.style.fill = "#555";
-        group.appendChild(path);
-      });
-    };
-
-    const target = this.shadowRoot?.getElementById("strokesDiv") as HTMLDivElement;
-    target.innerHTML = "";
-    console.log("target giveup", target);
-    if (this.charData_ !== undefined) {
-      for (let i = 0; i < this.charData_.strokes.length; i++) {
-        const strokesPortion = this.charData_.strokes.slice(0, i + 1);
-        renderFanningStrokes(target, strokesPortion);
-      }
-    }
-    this.gaveUp_ = true;
+    this.state = castImmutable<ReadonlyState>(
+      produce<QuizDataState>(castDraft(this.state), (base) => {
+        base.wantQuizState = QuizState.GaveUpInform;
+      })
+    );
   }
 
+  /** Gets if the current quiz state is one where the user gave up. */
+  protected isGaveUpQuizState(quizState: QuizState): boolean {
+    switch (quizState) {
+      case QuizState.UnknownQuizState:
+        return false;
+      case QuizState.NormalQuiz:
+        return false;
+      case QuizState.GaveUpInform:
+        return true;
+      case QuizState.GaveUpPractice:
+        return true;
+      case QuizState.ErrorState:
+        return false;
+    }
+  }
+
+  /** Resets the quiz state. */
   protected resetQuiz() {
-    this.gaveUp_ = false;
-    this.setupGaveUp = false;
-    this.strokesDrawn_ = 0;
-    this.oldCharacter = "____";
-    this.strokeNum_ = -1;
-    this.strokeThatHaveMistakes_ = 0;
+    this.state = castImmutable<ReadonlyState>(
+      produce<QuizDataState>(castDraft(DEFAULT_STATE), (base): QuizDataState => {
+        return base;
+      })
+    );
   }
 
   protected render() {
@@ -300,31 +414,48 @@ export class QuizElement extends LitElement {
     const h = window.innerHeight;
     // Max dimension is the smallest of the 2 minus a number for padding of cards and whatnot.
     this.maxDimension_ = Math.min(w - 250, h);
-    console.log("render", w, h, this.maxDimension_);
 
     let strokeCount = 0;
-    if (this.charData_) {
-      strokeCount = this.charData_.strokes.length;
+    if (this.state.charData.some) {
+      strokeCount = this.state.charData.safeValue().loadedData.strokes.length;
     }
 
     const svgOutline = this.createSvgOutline(this.maxDimension_);
-    return html`<div id="main">
-      <dile-card shadow-md title="Quiz">
-        <div id="quizContainer">
-          <span>${this.prompt}</span>
-        </div>
-        <div id="drawing">${svgOutline}</div>
+    return this.state.quizState !== QuizState.ErrorState
+      ? html`<div id="main">
+          <dile-card shadow-md title="Quiz">
+            <div id="quizContainer">
+              <span>${this.prompt}</span>
+            </div>
+            <div id="drawing">${svgOutline}</div>
 
-        <div id="strokesDiv"></div>
-        <div slot="footer">
-          <dile-button @click="${this.giveUp}">Give up!</dile-button>
-          <dile-button @click="${this.resetQuiz}">Reset!</dile-button>
-          ${this.gaveUp_ ? html`<span>Gave up mode...</span>` : html``}
-          <span>Total Strokes ${strokeCount}</span>
-          <span>Correct Strokes ${this.strokesDrawn_}</span>
-        </div>
-      </dile-card>
-    </div>`;
+            <div id="strokesDiv"></div>
+            <div slot="footer">
+              <dile-button @click="${this.giveUp}">Give up!</dile-button>
+              <dile-button @click="${this.resetQuiz}">Reset!</dile-button>
+              ${this.isGaveUpQuizState(this.state.quizState)
+                ? html`<span>Gave up mode...</span>`
+                : html``}
+              <span>Total Strokes ${strokeCount}</span>
+              <span>Correct Strokes ${this.state.strokesDrawn}</span>
+            </div>
+          </dile-card>
+        </div>`
+      : html`<div id="main">
+          <dile-card shadow-md title="Quiz">
+            <div id="quizContainer">
+              <span
+                >Failed to load the character ${this.character} error:
+                ${this.state.errorMessage}</span
+              >
+            </div>
+
+            <div id="strokesDiv"></div>
+            <div slot="footer">
+              <dile-button @click="${this.resetQuiz}">Try Reset?</dile-button>
+            </div>
+          </dile-card>
+        </div>`;
   }
 }
 
