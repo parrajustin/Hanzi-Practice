@@ -17,6 +17,7 @@ import "@dile/ui/components/pages/pages.js";
 import "@dile/ui/components/tabs/tabs.js";
 import "@dile/ui/components/modal/modal";
 import "@dile/ui/components/toast/toast";
+import "@dile/ui/components/rating/rating.js";
 import "@doubletrade/lit-datatable/lit-datatable";
 import "@doubletrade/lit-datatable/lit-datatable-column";
 import { SetApp } from "./store";

@@ -29,6 +29,13 @@ export interface ISpacedRepetitionReview {
   difficulty: number;
 }
 
+export interface IComputeReviewFactor {
+  /** computed value of card from 0 - 5. */
+  efactor: number;
+  /** The day when the card is due. */
+  dueDayNumber: TDayNumber;
+}
+
 export type SpacedRepetitionOptions = {
   /**
    * Should return a date to be used as right now. Default date uses UTC.
@@ -51,7 +58,7 @@ export class SpacedRepetition {
   }
 
   /** Gets the day number. */
-  private getDay(forDate?: TMilliseconds): TDayNumber {
+  public getDay(forDate?: TMilliseconds): TDayNumber {
     let millis: number = forDate ?? Date.now();
 
     if (this.options.nowFn !== undefined) {
@@ -62,10 +69,10 @@ export class SpacedRepetition {
   }
 
   /** Gets the next day this review will have to be reviewed. */
-  private computeNextRepetition(reviews: ISpacedRepetitionReview[]): TDayNumber {
+  private computeNextRepetition(reviews: ISpacedRepetitionReview[]): IComputeReviewFactor {
     // If there are no reviews make the next day be yesterday. It has to be reviewed now.
     if (reviews.length === 0) {
-      return this.getDay() - 1;
+      return { efactor: 0, dueDayNumber: this.getDay() - 1 };
     }
 
     const lastReview = reviews[reviews.length - 1] as ISpacedRepetitionReview;
@@ -73,11 +80,11 @@ export class SpacedRepetition {
 
     if (lastReview.difficulty >= 3) {
       if (reviews.length === 1) {
-        return lastReviewDay + 1;
+        return { efactor: lastReview.difficulty, dueDayNumber: lastReviewDay + 1 };
       }
 
       if (reviews.length === 2) {
-        return lastReviewDay + 6;
+        return { efactor: lastReview.difficulty, dueDayNumber: lastReviewDay + 6 };
       }
 
       let efactor = 2.5;
@@ -90,10 +97,10 @@ export class SpacedRepetition {
         efactor = 1.3;
       }
 
-      return lastReviewDay + Math.ceil(reviews.length * efactor);
+      return { efactor, dueDayNumber: lastReviewDay + Math.ceil(reviews.length * efactor) };
     }
 
-    return lastReviewDay;
+    return { efactor: lastReview.difficulty, dueDayNumber: lastReviewDay };
   }
 
   /**
@@ -105,12 +112,12 @@ export class SpacedRepetition {
   getDueCards(
     cards: ISpacedRepetitionCard[],
     reviews: ISpacedRepetitionReview[]
-  ): [ISpacedRepetitionCard, TDayNumber][] {
+  ): [ISpacedRepetitionCard, IComputeReviewFactor][] {
     const today = this.getDay();
     console.log("getDueCards today:", today);
 
     return cards
-      .map((card): [ISpacedRepetitionCard, TDayNumber] => {
+      .map((card): [ISpacedRepetitionCard, IComputeReviewFactor] => {
         const reviewsForCard = reviews.filter((candidate) => {
           return candidate.cardId === card.id;
         });
@@ -118,8 +125,8 @@ export class SpacedRepetition {
         return [card, this.computeNextRepetition(reviewsForCard)];
       })
       .filter(([, nextRepetition]) => {
-        console.log("filter: ", nextRepetition, " rep: ", nextRepetition <= today);
-        return nextRepetition <= today;
+        console.log("filter: ", nextRepetition, " rep: ", nextRepetition.dueDayNumber <= today);
+        return nextRepetition.dueDayNumber <= today;
       });
   }
 }

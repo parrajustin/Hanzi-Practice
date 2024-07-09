@@ -1,4 +1,5 @@
 import { AddAppCb } from "client/store";
+import type { IComputeReviewFactor } from "client/util/spaced_repetition";
 import { SpacedRepetition } from "client/util/spaced_repetition";
 import type { DocumentData, Firestore, DocumentReference, Timestamp } from "firebase/firestore";
 import { addDoc, collection, getDocs, getFirestore, serverTimestamp } from "firebase/firestore";
@@ -30,6 +31,8 @@ interface Hanzi {
   selfRef: DocumentReference<DocumentData, DocumentData>;
 }
 
+type DueCardType = [Hanzi, IComputeReviewFactor];
+
 @customElement("quizzer-element")
 export class QuizzerElement extends LitElement {
   static styles = css`
@@ -49,7 +52,7 @@ export class QuizzerElement extends LitElement {
   private spacedRepetitionSystem = new SpacedRepetition();
 
   @state()
-  private dueCards_: Hanzi[] = [];
+  private dueCards_: DueCardType[] = [];
   @state()
   private dueCardIndex_ = 0;
   private oldDueCardIndex_ = -1;
@@ -98,10 +101,9 @@ export class QuizzerElement extends LitElement {
   }
 
   protected identifyReview() {
-    this.dueCards_ = this.spacedRepetitionSystem
-      .getDueCards(this.hanziChars_, this.reviews_)
-      .map((v) => v[0]) as unknown as Hanzi[];
-    Shuffle(this.dueCards_);
+    const srs = this.spacedRepetitionSystem.getDueCards(this.hanziChars_, this.reviews_);
+    Shuffle(srs);
+    this.dueCards_ = srs as unknown as [Hanzi, IComputeReviewFactor][];
     console.log("dueCards", this.dueCards_);
   }
 
@@ -112,7 +114,7 @@ export class QuizzerElement extends LitElement {
 
     const hanziQuizDetail = this.finsihedHanziQuiz_.safeValue();
 
-    const hanzi = this.dueCards_[this.dueCardIndex_];
+    const hanzi = (this.dueCards_[this.dueCardIndex_] as DueCardType)[0];
     if (hanzi === undefined) {
       const toast = this.shadowRoot?.getElementById("errorToast") as HTMLElement;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -188,13 +190,24 @@ export class QuizzerElement extends LitElement {
       return html`No cards due!`;
     }
 
-    const hanzi = this.dueCards_[this.dueCardIndex_];
+    const todayNumber = this.spacedRepetitionSystem.getDay();
+    const dueCardStruct = this.dueCards_[this.dueCardIndex_] as DueCardType;
+    console.log("hanzi quiz cardstruct", dueCardStruct);
+    const hanzi = dueCardStruct[0];
     if (hanzi === undefined) {
-      return html`No card found bug???`;
+      return html`No card, found bug???`;
     }
 
     return html` <dile-toast id="errorToast" duration="100000"></dile-toast
       ><dile-toast id="myToast" duration="5000"></dile-toast>
+
+      <dile-card shadow-md>
+        <span>Due cards: ${this.dueCards_.length}</span>
+        <span>No review: ${this.hanziChars_.length - this.dueCards_.length}</span>
+        <span>|</span>
+        <span>Card due ${dueCardStruct[1].dueDayNumber} today ${todayNumber}</span>
+        <dile-rating value="${dueCardStruct[1].efactor}" disableChanges></dile-rating>
+      </dile-card>
       <quiz-element
         character="${hanzi.hanzi}"
         prompt="${hanzi.text}"
