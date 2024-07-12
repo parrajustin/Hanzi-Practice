@@ -1,9 +1,12 @@
 import type { FirestoreReviewDocument } from "client/db/review";
 import { AddAppCb } from "client/store";
 import type { DocumentData, DocumentReference, Firestore } from "firebase/firestore";
-import { collection, getDocs, getFirestore } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, getFirestore } from "firebase/firestore";
 import { LitElement, css, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
+import { deleteIcon } from "../../third_party/icons/delete";
+import type { Option } from "client/option";
+import { None, Some } from "client/option";
 
 interface Hanzi {
   id: string;
@@ -44,6 +47,12 @@ export class ReviewViewElement extends LitElement {
   /** Spaced Repetition data. */
   @state()
   private reviews_: Review[] = [];
+  @state()
+  private reviewDeletion_ = "";
+  @state()
+  private reviewDeletionInProgress_ = false;
+  @state()
+  private reviewError_: Option<string> = None;
 
   constructor() {
     super();
@@ -118,25 +127,73 @@ export class ReviewViewElement extends LitElement {
     );
   }
 
+  protected deleteReview(ref: DocumentReference<DocumentData, DocumentData>) {
+    this.reviewDeletionInProgress_ = true;
+    this.reviewError_ = None;
+    this.reviewDeletion_ = ref.id;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (this.shadowRoot?.getElementById("myModal") as any).open();
+    if (this.db_ !== undefined) {
+      deleteDoc(doc(collection(this.db_, "status"), ref.id))
+        .then(() => {
+          this.reviewDeletionInProgress_ = false;
+        })
+        .catch((error: unknown) => {
+          this.reviewDeletionInProgress_ = false;
+          this.reviewError_ = Some(`Failed deleteDoc for "${ref.id} due to "${error}"`);
+        });
+    } else {
+      this.reviewDeletionInProgress_ = false;
+      this.reviewError_ = Some(
+        `Could not delete ${this.reviewDeletion_} becuse firestore not booted.`
+      );
+    }
+  }
+
   protected render() {
     const conf = [
-      { property: "id", header: "ID", hidden: true },
+      { property: "id", header: "ID", hidden: false },
       { property: "char", header: "Hanzi", hidden: false },
       { property: "pinyin", header: "Pinyin", hidden: false },
       { property: "cardId", header: "CardId", hidden: true },
       { property: "difficulty", header: "Difficulty", hidden: false },
       { property: "timestamp", header: "Timestamp", hidden: false },
-      { property: "selfRef", header: "SelfRef", hidden: true }
+      { property: "selfRef", header: "DeleteBtn", hidden: false }
     ];
     const propertyOfTimestamp = (value: string) =>
       html`<div style="color: red;">${this.toIsoString(new Date(value))}</div>`;
+    const deletionBtn = (value: DocumentReference<DocumentData, DocumentData>) =>
+      html`<dile-button-icon
+        @click="${() => {
+          this.deleteReview(value);
+        }}"
+        .icon="${deleteIcon}"
+      ></dile-button-icon>`;
+    const modalBody = () => {
+      if (this.reviewDeletionInProgress_) {
+        return html`<dile-spinner active></dile-spinner>`;
+      } else if (this.reviewError_.some) {
+        return html`<p>Error: ${this.reviewError_}.</p>`;
+      } else {
+        return html`<p>Successfully deleted ${this.reviewDeletion_}.</p>`;
+      }
+    };
     return html`<lit-datatable sticky-header .data="${this.reviews_}" .conf="${conf}"
-      ><lit-datatable-column
-        column="${true}"
-        property="timestamp"
-        .html="${propertyOfTimestamp}"
-      ></lit-datatable-column>
-    </lit-datatable>`;
+        ><lit-datatable-column
+          column="${true}"
+          property="timestamp"
+          .html="${propertyOfTimestamp}"
+        ></lit-datatable-column>
+        <lit-datatable-column
+          column="${true}"
+          property="selfRef"
+          .html="${deletionBtn}"
+        ></lit-datatable-column>
+      </lit-datatable>
+      <dile-modal id="myModal" showCloseIcon blocking>
+        <p>Deleting review "${this.reviewDeletion_}".</p>
+        ${modalBody()}
+      </dile-modal> `;
   }
 }
 

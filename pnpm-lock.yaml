@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@dile/icons':
-        specifier: 2.0.6
-        version: 2.0.6
       '@dile/ui':
         specifier: 2.1.4
         version: 2.1.4
@@ -24,7 +21,7 @@ importers:
         specifier: 3.7.0
         version: 3.7.0
       immer:
-        specifier: ^10.1.1
+        specifier: 10.1.1
         version: 10.1.1
       lit:
         specifier: 3.1.4
