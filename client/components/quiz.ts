@@ -260,11 +260,6 @@ export class QuizElement extends LitElement {
         }
       };
       this.dispatchEvent(new CustomEvent<QuizDetail>("onComplete", options));
-      this.state = castImmutable<ReadonlyState>(
-        produce<QuizDataState>(resetStroke(castDraft(this.state)), (base) => {
-          base.wantQuizState = QuizState.NormalQuiz;
-        })
-      );
     };
 
     //
