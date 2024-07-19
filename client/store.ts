@@ -25,18 +25,18 @@ export interface Hanzi {
 }
 
 let app: FirebaseApp | undefined;
-const reviews: Review[] = [];
+let GLOBAL_REVIEWS: Review[] = [];
 const reviewIds = new Set<string>();
-const hanzi: Hanzi[] = [];
+let GLOBAL_HANZI: Hanzi[] = [];
 const hanziIds = new Set<string>();
 
 export type AppCallback = (app: FirebaseApp, reviews: Review[], hanzi: Hanzi[]) => Promise<void>;
 const callbacks: AppCallback[] = [];
 
 async function UpdateCallbacks() {
-  console.log("UpdateCallbacks", hanzi, reviews);
+  console.log("UpdateCallbacks", GLOBAL_HANZI, GLOBAL_REVIEWS);
   for (const cb of callbacks) {
-    await cb(app as FirebaseApp, reviews, hanzi);
+    await cb(app as FirebaseApp, GLOBAL_REVIEWS, GLOBAL_HANZI);
   }
 }
 
@@ -54,7 +54,7 @@ export async function SetApp(newApp: FirebaseApp): Promise<void> {
     querySnapshot.forEach((result) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = result.data() as Review;
-      reviews.push({
+      GLOBAL_REVIEWS.push({
         id: result.id,
         char: data.char,
         cardId: (data.char as DocumentReference<DocumentData, DocumentData>).id,
@@ -77,7 +77,7 @@ export async function SetApp(newApp: FirebaseApp): Promise<void> {
         tone: data.tone,
         selfRef: result.ref
       };
-      hanzi.push(charData);
+      GLOBAL_HANZI.push(charData);
       hanziIds.add(result.id);
     });
 
@@ -85,6 +85,7 @@ export async function SetApp(newApp: FirebaseApp): Promise<void> {
 
     const q = query(collection(firestore, "hanzi"));
     onSnapshot(q, async (querySnapshot) => {
+      const newHanzi = [...GLOBAL_HANZI];
       querySnapshot.forEach((doc) => {
         if (hanziIds.has(doc.id)) {
           return;
@@ -99,21 +100,23 @@ export async function SetApp(newApp: FirebaseApp): Promise<void> {
           tone: data.tone,
           selfRef: doc.ref
         };
-        hanzi.push(charData);
+        newHanzi.push(charData);
         hanziIds.add(doc.id);
       });
+      GLOBAL_HANZI = newHanzi;
       await UpdateCallbacks();
     });
 
     const queryReviews = query(collection(firestore, "status"));
     onSnapshot(queryReviews, async (querySnapshot) => {
+      const newReviews = [...GLOBAL_REVIEWS];
       querySnapshot.forEach((doc) => {
         if (doc.metadata.hasPendingWrites || reviewIds.has(doc.id)) {
           return;
         }
         const data = doc.data() as Review;
         console.log("Adding new review: ", data);
-        reviews.push({
+        newReviews.push({
           id: doc.id,
           char: data.char,
           cardId: (data.char as DocumentReference<DocumentData, DocumentData>).id,
@@ -124,6 +127,7 @@ export async function SetApp(newApp: FirebaseApp): Promise<void> {
         });
         reviewIds.add(doc.id);
       });
+      GLOBAL_REVIEWS = newReviews;
       await UpdateCallbacks();
     });
   });
@@ -134,7 +138,7 @@ export async function AddAppCb(cb: AppCallback) {
   if (app !== undefined) {
     queueMicrotask(async () => {
       if (app !== undefined) {
-        await cb(app, reviews, hanzi);
+        await cb(app, GLOBAL_REVIEWS, GLOBAL_HANZI);
       }
     });
   }

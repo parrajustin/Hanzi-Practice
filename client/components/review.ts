@@ -58,44 +58,32 @@ export class ReviewViewElement extends LitElement {
     super();
     console.log("Review VIEWER");
 
-    AddAppCb(async (app) => {
+    AddAppCb(async (app, reviews, hanzi) => {
       this.db_ = getFirestore(app);
 
-      const hanzi = await getDocs(collection(this.db_, "hanzi"));
       hanzi.forEach((result) => {
-        const data = result.data() as Hanzi;
-        const charData = {
-          id: result.id,
-          hanzi: data.hanzi,
-          pinyin: data.pinyin,
-          text: data.text,
-          tone: data.tone
-        };
-        this.hanziChars_.set(result.id, charData);
+        this.hanziChars_.set(result.id, result);
       });
-      console.log("Review hanzi: ", this.hanziChars_);
 
-      const reviews: Review[] = [];
-      const querySnapshot = await getDocs(collection(this.db_, "status"));
-      querySnapshot.forEach((result) => {
-        const data = result.data() as FirestoreReviewDocument;
-        const hanziElement = this.hanziChars_.get(data.char.id);
+      const localReviews: Review[] = [];
+      reviews.forEach((result) => {
+        const hanziElement = this.hanziChars_.get(result.char.id);
         if (hanziElement === undefined) {
-          console.error("hanziElement missing: ", data.char.id);
+          console.error("hanziElement missing: ", result.char.id);
           return;
         }
 
-        reviews.push({
+        localReviews.push({
           id: result.id,
           char: hanziElement.hanzi,
           pinyin: hanziElement.pinyin,
-          cardId: data.char,
-          difficulty: data.difficulty,
-          timestamp: data.reviewed.toMillis(),
-          selfRef: result.ref
+          cardId: result.char,
+          difficulty: result.difficulty,
+          timestamp: result.reviewed.toMillis(),
+          selfRef: result.selfRef
         });
       });
-      this.reviews_ = reviews;
+      this.reviews_ = localReviews;
       this.reviews_.sort((a, b) => b.timestamp - a.timestamp);
       console.log("reviews loaded: ", this.reviews_);
     });
