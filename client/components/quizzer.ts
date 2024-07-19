@@ -1,37 +1,27 @@
 import { AddAppCb } from "client/store";
-import type { IComputeReviewFactor } from "client/util/spaced_repetition";
 import { SpacedRepetition } from "client/util/spaced_repetition";
-import type { DocumentData, Firestore, DocumentReference, Timestamp } from "firebase/firestore";
-import { addDoc, collection, getDocs, getFirestore, serverTimestamp } from "firebase/firestore";
+import type { Firestore } from "firebase/firestore";
+import { addDoc, collection, getFirestore, serverTimestamp } from "firebase/firestore";
 import type { TemplateResult } from "lit";
 import { LitElement, css, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import type { QuizDetail } from "./quiz";
-import type { Option } from "client/option";
-import { None, Some } from "client/option";
 import type { PinyinDetail } from "./pinyin_selector";
 import { Shuffle } from "client/util/shuffle";
-
-interface Review {
-  id: string;
-  char: DocumentReference<DocumentData, DocumentData>;
-  cardId: string;
-  difficulty: number;
-  reviewed: Timestamp;
-  timestamp: number;
-  selfRef: DocumentReference<DocumentData, DocumentData>;
-}
-
-interface Hanzi {
-  id: string;
-  hanzi: string;
-  pinyin: string;
-  text: string;
-  tone: number;
-  selfRef: DocumentReference<DocumentData, DocumentData>;
-}
-
-type DueCardType = [Hanzi, IComputeReviewFactor];
+import type { Immutable } from "immer";
+import type {
+  DueCardType,
+  QuizzerActions,
+  StateInital,
+  StateQuiz,
+  StateSubmission,
+  StateWaitingQuizData,
+  QuizzerState
+} from "./quizzer_state";
+import { QuizzerReducer, SubmissionState } from "./quizzer_state";
+import { typeGuard } from "client/util/typeguard";
+import { StateReducerController } from "client/util/state_reducer";
+import { WrapPromise } from "client/util/wrap_promise";
 
 @customElement("quizzer-element")
 export class QuizzerElement extends LitElement {
@@ -39,171 +29,208 @@ export class QuizzerElement extends LitElement {
     .u-full-height {
       height: 100%;
     }
+    .myModalCustomized {
+      font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", "Lucida Sans", Arial,
+        sans-serif;
+      --dile-modal-border-radius: 0;
+      --dile-modal-content-background-color: #303030;
+      --dile-modal-width: 80vw;
+      --dile-modal-min-width: 100px;
+      --dile-modal-content-shadow-color: #ddd;
+      --dile-modal-background-color: #fff;
+      --dile-modal-animation-duration: 1s;
+      --dile-modal-close-icon-right: 5px;
+      --dile-modal-close-icon-color: yellow;
+      color: #fff;
+    }
+    .myModalCustomized p {
+      color: #f66;
+      font-size: 0.9em;
+      margin: 10px 0;
+      text-transform: uppercase;
+    }
   `;
 
   private db_?: Firestore;
-  /** Spaced Repetition data. */
-  private reviews_: Review[] = [];
-  /** Hanzi character informations. */
-  private hanziChars_: Hanzi[] = [];
-  /** Hanzi character data. */
-  private hanzi_ = new Map<string, Hanzi>();
   /** Spaced repetition system. */
   private spacedRepetitionSystem = new SpacedRepetition();
 
-  @state()
-  private dueCards_: DueCardType[] = [];
-  @state()
-  private dueCardIndex_ = 0;
-  private oldDueCardIndex_ = -1;
+  public stateMachine = new StateReducerController<QuizzerState, QuizzerActions>(
+    { state: "StateInital" },
+    QuizzerReducer
+  );
 
-  private finishedPinyinSelectorMistakes_: Option<number> = None;
-  private finsihedHanziQuiz_: Option<QuizDetail> = None;
+  @state()
+  private state: Immutable<QuizzerState>;
 
   constructor() {
     super();
 
-    AddAppCb(async (app) => {
-      this.db_ = getFirestore(app);
-      const querySnapshot = await getDocs(collection(this.db_, "status"));
-      querySnapshot.forEach((result) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const data = result.data() as Review;
-        this.reviews_.push({
-          id: result.id,
-          char: data.char,
-          cardId: (data.char as DocumentReference<DocumentData, DocumentData>).id,
-          difficulty: data.difficulty,
-          reviewed: data.reviewed,
-          timestamp: data.reviewed.toMillis(),
-          selfRef: result.ref
+    this.stateMachine.addListener((data) => {
+      this.state = data;
+      console.log("quizzer state change", data);
+
+      // Go from inital state to loading state.
+      if (typeGuard<StateInital>(data, data.state === "StateInital")) {
+        this.stateMachine.applyAction({ action: "ActionPromptStateWaitingQuizData" });
+        AddAppCb(async (app, reviews, hanzi) => {
+          this.db_ = getFirestore(app);
+          this.stateMachine.applyAction({ action: "ActionLoadQuizData", reviews, hanzi });
         });
-      });
+      }
+      // We are in the loading data stage and we have data!
+      if (typeGuard<StateWaitingQuizData>(data, data.state === "StateGettingDueCards")) {
+        // Change to the identify cards stage.
+        const srs = this.spacedRepetitionSystem.getDueCards(data.hanzi, data.reviews);
+        Shuffle(srs);
+        this.stateMachine.applyAction({
+          action: "ActionLoadDueReviews",
+          dueCardIndex: 0,
+          dueCardsFromSystem: srs as DueCardType[]
+        });
+      }
+    }, /*includeInitalValue=*/ true);
 
-      const hanzi = await getDocs(collection(this.db_, "hanzi"));
-      hanzi.forEach((result) => {
-        const data = result.data() as Hanzi;
-        const charData = {
-          id: result.id,
-          hanzi: data.hanzi,
-          pinyin: data.pinyin,
-          text: data.text,
-          tone: data.tone,
-          selfRef: result.ref
-        };
-        this.hanziChars_.push(charData);
-        this.hanzi_.set(result.id, charData);
-      });
-
-      console.log("loaded:", this.reviews_, this.hanzi_);
-      this.identifyReview();
+    // Update quiz states.
+    this.stateMachine.addAsyncListener(async (data) => {
+      // If are submitting the current review.
+      if (
+        typeGuard<StateSubmission>(data, data.state === "StateSubmission") &&
+        !data.isSubmitting
+      ) {
+        console.log("tryEmitCompletion");
+        await this.tryEmitCompletion();
+      }
     });
   }
 
-  protected identifyReview() {
-    const srs = this.spacedRepetitionSystem.getDueCards(this.hanziChars_, this.reviews_);
-    Shuffle(srs);
-    this.dueCards_ = srs as unknown as [Hanzi, IComputeReviewFactor][];
-    console.log("dueCards", this.dueCards_);
-  }
+  /** Tries to send completion if both parts of the quiz are good. */
+  protected async tryEmitCompletion() {
+    if (this.state.state !== "StateSubmission") {
+      // Only continue if this is quiz state.
+      return;
+    }
+    if (this.state.resultHanzi.none || this.state.resultPinyin.none) {
+      // Only continue if there are results for both.
+      return;
+    }
+    this.stateMachine.applyAction({ action: "ActionSetIsSubmitting" });
+    // Update state to submitting review.
+    const hanziQuizDetail = this.state.resultHanzi.safeValue();
 
-  protected async emitCompletion() {
-    if (this.finsihedHanziQuiz_.none || this.finishedPinyinSelectorMistakes_.none) {
+    const hanziReviewed = (
+      this.state.dueCardsFromSystem[this.state.dueCardIndex] as DueCardType
+    )[0];
+    if (hanziReviewed === undefined) {
+      this.stateMachine.applyAction({
+        action: "ActionFailedSubmission",
+        error: `Couldn't find hanzi being reviewed index "${this.state.dueCardIndex}" out of due cards "${this.state.dueCardsFromSystem.length}".`
+      });
+      return;
+    }
+    if (this.db_ === undefined) {
+      this.stateMachine.applyAction({
+        action: "ActionFailedSubmission",
+        error: `No firestore "db" found.`
+      });
       return;
     }
 
-    const hanziQuizDetail = this.finsihedHanziQuiz_.safeValue();
-
-    const hanzi = (this.dueCards_[this.dueCardIndex_] as DueCardType)[0];
-    if (hanzi === undefined) {
-      const toast = this.shadowRoot?.getElementById("errorToast") as HTMLElement;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (toast as any).open("Complete called but found no hanzi!?", "error");
-      throw new Error("no hanzi found!");
-    }
-    if (this.db_ === undefined) {
-      const toast = this.shadowRoot?.getElementById("errorToast") as HTMLElement;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (toast as any).open("No firestore db found!", "error");
-      throw new Error("no db");
-    }
-
-    let style = "error";
     let difficulty = 0;
     if (hanziQuizDetail.percentMistakes.fraction < 1e-6) {
       difficulty = 5;
-      style = "success";
     } else if (hanziQuizDetail.strokeMistakes === 1) {
       difficulty = 4;
-      style = "success";
     } else if (hanziQuizDetail.percentMistakes.fraction < 0.25) {
       difficulty = 3;
-      style = "neutral";
     } else if (hanziQuizDetail.percentMistakes.fraction < 0.5) {
       difficulty = 2;
-      style = "neutral";
     } else if (hanziQuizDetail.percentMistakes.fraction < 0.75) {
       difficulty = 1;
     } else {
       difficulty = 0;
     }
     let maxDifficulty = 5;
-    if (this.finishedPinyinSelectorMistakes_.safeValue() > 1) {
+    if (this.state.resultPinyin.safeValue() > 1) {
       maxDifficulty = 3;
-    } else if (this.finishedPinyinSelectorMistakes_.safeValue() === 1) {
+    } else if (this.state.resultPinyin.safeValue() === 1) {
       maxDifficulty = 4;
     }
-    difficulty = Math.min(difficulty, maxDifficulty);
+    const finalDifficulty = Math.min(difficulty, maxDifficulty);
 
-    const toastText = `Finished got: ${difficulty}`;
-    const toast = this.shadowRoot?.getElementById("myToast") as HTMLElement;
+    const finishText = `Final result "${finalDifficulty}" out of 5. Got score "${difficulty}" on hanzi and the following mistakes on pinyin "${this.state.resultPinyin.safeValue()}".`;
+    this.stateMachine.applyAction({ action: "ActionSetModalText", modalText: finishText });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (toast as any).open(toastText, style);
-    setTimeout(() => {
-      this.dueCardIndex_++;
-    }, 5000);
-    const addPromise = await addDoc(collection(this.db_, "status"), {
-      char: hanzi.selfRef,
-      difficulty,
-      reviewed: serverTimestamp()
-    }).catch((e) => {
-      const toast = this.shadowRoot?.getElementById("errorToast") as HTMLElement;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (toast as any).open("Failed when calling `addDoc` to firestore!", "error");
-      throw new Error(e);
-    });
-    console.log("write review", addPromise);
+    const modalElement = this.shadowRoot?.getElementById("uploadModal") as any;
+    modalElement.open();
+
+    const addDocResult = await WrapPromise(
+      addDoc(collection(this.db_, "status"), {
+        char: hanziReviewed.selfRef,
+        difficulty: finalDifficulty,
+        reviewed: serverTimestamp()
+      })
+    );
+    if (addDocResult.err) {
+      this.stateMachine.applyAction({
+        action: "ActionFailedSubmission",
+        error: JSON.stringify(addDocResult)
+      });
+    } else {
+      this.stateMachine.applyAction({ action: "ActionSetFinishedSubmitting" });
+    }
   }
 
-  protected async onComplete(e: CustomEvent<QuizDetail>) {
-    this.finsihedHanziQuiz_ = Some(e.detail);
-    await this.emitCompletion();
+  protected closeDileSubmission() {
+    if (this.state.state === "StateSubmissionError") {
+      this.stateMachine.applyAction({ action: "ActionResetQuiz" });
+    } else if (this.state.state === "StateSubmission") {
+      // Set finished to go back to quiz state.
+      this.stateMachine.applyAction({ action: "ActionFinishedSubmission" });
+      // Now increment the due card.
+      this.stateMachine.applyAction({ action: "ActionNextDueCards" });
+    }
+  }
+
+  protected async onCompleteQuiz(e: CustomEvent<QuizDetail>) {
+    if (
+      typeGuard<StateQuiz>(this.state, this.state.state === "StateQuiz") &&
+      this.state.resultHanzi.none
+    ) {
+      this.stateMachine.applyAction({
+        action: "ActionHanziResults",
+        resultHanzi: e.detail
+      });
+    }
   }
 
   protected async onCompletePinyin(e: CustomEvent<PinyinDetail>) {
-    this.finishedPinyinSelectorMistakes_ = Some(e.detail.mistakes);
-    await this.emitCompletion();
+    if (
+      typeGuard<StateQuiz>(this.state, this.state.state === "StateQuiz") &&
+      this.state.resultPinyin.none
+    ) {
+      this.stateMachine.applyAction({
+        action: "ActionPinyinResults",
+        resultPinyin: e.detail.mistakes
+      });
+    }
   }
 
   protected buildHanziQuiz(): TemplateResult {
-    if (this.dueCards_.length === 0 || this.dueCardIndex_ === this.dueCards_.length) {
-      return html`No cards due!`;
+    if (this.state.state !== "StateQuiz" && this.state.state !== "StateSubmission") {
+      return html`Not on quiz state.`;
     }
-
     const todayNumber = this.spacedRepetitionSystem.getDay();
-    const dueCardStruct = this.dueCards_[this.dueCardIndex_] as DueCardType;
-    console.log("hanzi quiz cardstruct", dueCardStruct);
+    const dueCardStruct = this.state.dueCardsFromSystem[this.state.dueCardIndex] as DueCardType;
     const hanzi = dueCardStruct[0];
     if (hanzi === undefined) {
       return html`No card, found bug???`;
     }
 
-    return html` <dile-toast id="errorToast" duration="100000"></dile-toast
-      ><dile-toast id="myToast" duration="5000"></dile-toast>
-
+    return html`
       <dile-card shadow-md>
-        <span>Due cards: ${this.dueCards_.length}</span>
-        <span>No review: ${this.hanziChars_.length - this.dueCards_.length}</span>
+        <span>Due cards: ${this.state.dueCardsFromSystem.length}</span>
+        <span> No review: ${this.state.hanzi.length - this.state.dueCardsFromSystem.length} </span>
         <span>|</span>
         <span>Card due ${dueCardStruct[1].dueDayNumber} today ${todayNumber}</span>
         <dile-rating value="${dueCardStruct[1].efactor}" disableChanges></dile-rating>
@@ -213,23 +240,89 @@ export class QuizzerElement extends LitElement {
         prompt="${hanzi.text}"
         pinyin="${hanzi.pinyin}"
         tone="${hanzi.tone}"
-        @onComplete="${this.onComplete}"
+        @onComplete="${this.onCompleteQuiz}"
       ></quiz-element>
       <pinyin-selector-element
         pinyinLine="${hanzi.pinyin}"
         @onComplete="${this.onCompletePinyin}"
-      ></pinyin-selector-element>`;
+      ></pinyin-selector-element>
+    `;
   }
 
   protected render() {
-    if (this.oldDueCardIndex_ !== this.dueCardIndex_) {
-      this.oldDueCardIndex_ = this.dueCardIndex_;
-      this.finishedPinyinSelectorMistakes_ = None;
-      this.finsihedHanziQuiz_ = None;
+    if (this.state.state === "StateInital") {
+      return html`<span>In starting state.... please wait...</span>`;
+    }
+
+    if (this.state.state === "StateWaitingQuizData") {
+      return html`<dile-spinner active></dile-spinner>`;
+    }
+
+    if (this.state.state === "StateNoCardsDue") {
+      return html`
+        <dile-card shadow-md>
+          <span>0 cards due, Nice!</span>
+        </dile-card>
+      `;
     }
 
     const quizlet = this.buildHanziQuiz();
-    return html`<div>${quizlet}</div>`;
+    const getUploadModalTitle = () => {
+      return this.state.state === "StateSubmission" ? html`Submitting Review` : html`Error!`;
+    };
+    const getUploadModalText = () => {
+      if (this.state.state === "StateSubmission" && this.state.uploadModalText.some) {
+        return html`<span>${this.state.uploadModalText.safeValue()}</span>`;
+      } else if (this.state.state === "StateSubmissionError" && this.state.uploadModalText.some) {
+        return html`<span>${this.state.uploadModalText.safeValue()}</span>`;
+      } else {
+        return html`No text...`;
+      }
+    };
+    const getModalFooter = () => {
+      if (this.state.state === "StateSubmissionError") {
+        return html`<dile-button
+          @click="${() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const modalElement = this.shadowRoot?.getElementById("uploadModal") as any;
+            modalElement.close();
+          }}"
+          >Exit Error</dile-button
+        >`;
+      }
+      if (
+        this.state.state === "StateSubmission" &&
+        this.state.isSubmitting === SubmissionState.IsSubmitting
+      ) {
+        return html`<dile-spinner active></dile-spinner>`;
+      } else if (
+        this.state.state === "StateSubmission" &&
+        this.state.isSubmitting === SubmissionState.FinishedSubmission
+      ) {
+        return html`<dile-button
+          @click="${() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const modalElement = this.shadowRoot?.getElementById("uploadModal") as any;
+            modalElement.close();
+          }}"
+          >Exit Submission</dile-button
+        >`;
+      }
+      return html``;
+    };
+    return html`
+      <dile-modal
+        id="uploadModal"
+        class="myModalCustomized"
+        blocking
+        @dile-modal-closed="${this.closeDileSubmission}"
+      >
+        <p>${getUploadModalTitle()}</p>
+        <div>${getUploadModalText()}</div>
+        <div>${getModalFooter()}</div>
+      </dile-modal>
+      <div>${quizlet}</div>
+    `;
   }
 }
 

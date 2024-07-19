@@ -94,7 +94,8 @@ export class PinyinSelectorElement extends LitElement {
     this.shuffle(allOptions);
 
     // const pinyinWithoutToneNum = this.charData_?.slice(0, text.length - 1);
-    return html` <dile-card shadow-md title="Tone Selector">
+    return html`
+      <dile-card shadow-md title="Tone Selector">
         <div id="quizContainer">
           ${allOptions.map((o) => {
             return html`<dile-button
@@ -106,7 +107,8 @@ export class PinyinSelectorElement extends LitElement {
           })}
         </div>
       </dile-card>
-      <dile-toast id="myToast" duration="5000"></dile-toast>`;
+      <dile-toast id="myToast" duration="5000"></dile-toast>
+    `;
   }
 }
 

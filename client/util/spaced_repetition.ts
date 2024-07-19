@@ -110,8 +110,8 @@ export class SpacedRepetition {
    * @returns the tuple of card and when it should've been reviewed
    */
   getDueCards(
-    cards: ISpacedRepetitionCard[],
-    reviews: ISpacedRepetitionReview[]
+    cards: Readonly<ISpacedRepetitionCard[]>,
+    reviews: Readonly<ISpacedRepetitionReview[]>
   ): [ISpacedRepetitionCard, IComputeReviewFactor][] {
     const today = this.getDay();
     console.log("getDueCards today:", today);

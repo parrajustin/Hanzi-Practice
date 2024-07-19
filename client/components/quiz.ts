@@ -1,4 +1,4 @@
-import type { PropertyDeclaration, TemplateResult } from "lit";
+import type { TemplateResult } from "lit";
 import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { CharacterJson, StrokeData } from "hanzi-writer";
@@ -6,8 +6,9 @@ import HanziWriter from "hanzi-writer";
 import type { Option } from "client/option";
 import { None, Some } from "client/option";
 import { FractionD } from "client/util/fraction";
-import { Immutable, castImmutable, produce, castDraft } from "immer";
+import type { Immutable, WritableDraft } from "immer";
 import { WrapPromise } from "client/util/wrap_promise";
+import { StateController } from "client/util/state";
 
 export interface QuizDetail {
   // Strokes that had mistakes.
@@ -16,7 +17,7 @@ export interface QuizDetail {
   percentMistakes: FractionD;
 }
 
-enum QuizState {
+export enum QuizState {
   /** Default starting unknown state. */
   UnknownQuizState,
   /** Normal quiz state. User try quiz and results are retruned. */
@@ -29,7 +30,7 @@ enum QuizState {
   ErrorState
 }
 
-interface QuizDataState {
+export interface QuizDataState {
   /** Old character the quiz started on. */
   oldCharacter: string;
   /** Hanzi char data. */
@@ -48,8 +49,9 @@ interface QuizDataState {
   errorMessage: string;
 }
 
-type ReadonlyState = Immutable<QuizDataState>;
-const DEFAULT_STATE: ReadonlyState = castImmutable<QuizDataState>({
+export type ReadonlyQuizState = Immutable<QuizDataState>;
+
+export const DEFAULT_QUIZ_STATE: QuizDataState = {
   oldCharacter: "__OLD__",
   charData: None,
   strokeNumber: -1,
@@ -58,7 +60,10 @@ const DEFAULT_STATE: ReadonlyState = castImmutable<QuizDataState>({
   wantQuizState: QuizState.NormalQuiz,
   quizState: QuizState.UnknownQuizState,
   errorMessage: ""
-});
+};
+/** The global state for quiz state. */
+export const QUIZ_STATE_CONTROLLER = new StateController<QuizDataState>(DEFAULT_QUIZ_STATE);
+
 
 @customElement("quiz-element")
 export class QuizElement extends LitElement {
@@ -109,10 +114,18 @@ export class QuizElement extends LitElement {
   tone?: number;
 
   private maxDimension_ = 0;
+
   @state()
-  state: ReadonlyState = DEFAULT_STATE;
+  private state: ReadonlyQuizState;
   /** If a hanzi writer instance exists. */
   private writer_: Option<HanziWriter> = None;
+
+  constructor() {
+    super();
+    QUIZ_STATE_CONTROLLER.addListener((quizState) => {
+      this.state = quizState;
+    }, /*includeInitalValue=*/ true);
+  }
 
   /** Render the character steps. */
   private renderCharacterSteps() {
@@ -147,12 +160,10 @@ export class QuizElement extends LitElement {
         renderFanningStrokes(target, strokesPortion);
       }
     } else {
-      this.state = castImmutable<ReadonlyState>(
-        produce<QuizDataState>(castDraft(this.state), (base) => {
-          base.wantQuizState = QuizState.ErrorState;
-          base.errorMessage = `Error: trying to render "renderCharacterSteps" but no char data!`;
-        })
-      );
+      QUIZ_STATE_CONTROLLER.applyChange((base) => {
+        base.wantQuizState = QuizState.ErrorState;
+        base.errorMessage = `Error: trying to render "renderCharacterSteps" but no char data!`;
+      });
     }
   }
 
@@ -187,29 +198,25 @@ export class QuizElement extends LitElement {
       return Some(v);
     });
 
-    const resetStroke = produce<QuizDataState>((base: QuizDataState) => {
+    const resetStroke = (base: WritableDraft<QuizDataState>) => {
       base.strokeNumber = -1;
       base.strokesThatHaveMistakes = 0;
       base.strokesDrawn = 0;
-    });
+    };
 
     const normalOnMistake = (strokeData: StrokeData) => {
-      this.state = castImmutable<ReadonlyState>(
-        produce<QuizDataState>(castDraft(this.state), (base) => {
-          base.strokesDrawn++;
-          if (base.strokeNumber !== strokeData.strokeNum) {
-            base.strokeNumber = strokeData.strokeNum;
-            base.strokesThatHaveMistakes++;
-          }
-        })
-      );
+      QUIZ_STATE_CONTROLLER.applyChange((base) => {
+        base.strokesDrawn++;
+        if (base.strokeNumber !== strokeData.strokeNum) {
+          base.strokeNumber = strokeData.strokeNum;
+          base.strokesThatHaveMistakes++;
+        }
+      });
     };
     const normalOnCorrect = () => {
-      this.state = castImmutable<ReadonlyState>(
-        produce<QuizDataState>(castDraft(this.state), (base) => {
-          base.strokesDrawn++;
-        })
-      );
+      QUIZ_STATE_CONTROLLER.applyChange((base) => {
+        base.strokesDrawn++;
+      });
     };
     const normalOnComplete = (summary: { character: string; totalMistakes: number }) => {
       const options: CustomEventInit<QuizDetail> = {
@@ -227,11 +234,9 @@ export class QuizElement extends LitElement {
     };
     const gaveUpInstructionOnComplete = () => {
       // On complete of the instruction mode go to practice.
-      this.state = castImmutable<ReadonlyState>(
-        produce<QuizDataState>(resetStroke(castDraft(this.state)), (base) => {
-          base.wantQuizState = QuizState.GaveUpPractice;
-        })
-      );
+      QUIZ_STATE_CONTROLLER.applyChange((base) => {
+        base.wantQuizState = QuizState.GaveUpPractice;
+      }).applyChange(resetStroke);
     };
     const gaveUpPracticeOnComplete = () => {
       const percentMistakes = new FractionD(
@@ -240,11 +245,9 @@ export class QuizElement extends LitElement {
       );
       if (percentMistakes.fraction > 0.25) {
         // If user failed to get 75% correct go back to instruction.
-        this.state = castImmutable<ReadonlyState>(
-          produce<QuizDataState>(resetStroke(castDraft(this.state)), (base) => {
-            base.wantQuizState = QuizState.GaveUpInform;
-          })
-        );
+        QUIZ_STATE_CONTROLLER.applyChange((base) => {
+          base.wantQuizState = QuizState.GaveUpInform;
+        }).applyChange(resetStroke);
         return;
       }
 
@@ -304,12 +307,10 @@ export class QuizElement extends LitElement {
     } else {
       this.writer_.safeValue().hideOutline();
     }
-    this.state = castImmutable<ReadonlyState>(
-      produce<QuizDataState>(resetStroke(castDraft(this.state)), (base) => {
-        base.quizState = base.wantQuizState;
-        base.oldCharacter = this.character;
-      })
-    );
+    QUIZ_STATE_CONTROLLER.applyChange((base) => {
+      base.quizState = base.wantQuizState;
+      base.oldCharacter = this.character;
+    }).applyChange(resetStroke);
   }
 
   /**
@@ -353,18 +354,14 @@ export class QuizElement extends LitElement {
         HanziWriter.loadCharacterData(this.character) as Promise<CharacterJson>
       );
       if (charData.ok) {
-        this.state = castImmutable<ReadonlyState>(
-          produce<QuizDataState>(castDraft(this.state), (base) => {
-            base.charData = Some({ char: this.character, loadedData: charData.safeUnwrap() });
-          })
-        );
+        QUIZ_STATE_CONTROLLER.applyChange((base) => {
+          base.charData = Some({ char: this.character, loadedData: charData.safeUnwrap() });
+        });
       } else {
-        this.state = castImmutable<ReadonlyState>(
-          produce<QuizDataState>(castDraft(this.state), (base) => {
-            base.wantQuizState = QuizState.ErrorState;
-            base.errorMessage = `Error: ${charData.val}`;
-          })
-        );
+        QUIZ_STATE_CONTROLLER.applyChange((base) => {
+          base.wantQuizState = QuizState.ErrorState;
+          base.errorMessage = `Error: ${charData.val}`;
+        });
       }
     }
     super.scheduleUpdate();
@@ -372,11 +369,9 @@ export class QuizElement extends LitElement {
 
   /** User has chosen to give up. Change state to represent that. */
   protected giveUp() {
-    this.state = castImmutable<ReadonlyState>(
-      produce<QuizDataState>(castDraft(this.state), (base) => {
-        base.wantQuizState = QuizState.GaveUpInform;
-      })
-    );
+    QUIZ_STATE_CONTROLLER.applyChange((base) => {
+      base.wantQuizState = QuizState.GaveUpInform;
+    });
   }
 
   /** Gets if the current quiz state is one where the user gave up. */
@@ -397,11 +392,7 @@ export class QuizElement extends LitElement {
 
   /** Resets the quiz state. */
   protected resetQuiz() {
-    this.state = castImmutable<ReadonlyState>(
-      produce<QuizDataState>(castDraft(DEFAULT_STATE), (base): QuizDataState => {
-        return base;
-      })
-    );
+    QUIZ_STATE_CONTROLLER.resetToBase();
   }
 
   protected render() {
@@ -417,40 +408,44 @@ export class QuizElement extends LitElement {
 
     const svgOutline = this.createSvgOutline(this.maxDimension_);
     return this.state.quizState !== QuizState.ErrorState
-      ? html`<div id="main">
-          <dile-card shadow-md title="Quiz">
-            <div id="quizContainer">
-              <span>${this.prompt}</span>
-            </div>
-            <div id="drawing">${svgOutline}</div>
+      ? html`
+          <div id="main">
+            <dile-card shadow-md title="Quiz">
+              <div id="quizContainer">
+                <span>${this.prompt}</span>
+              </div>
+              <div id="drawing">${svgOutline}</div>
 
-            <div id="strokesDiv"></div>
-            <div slot="footer">
-              <dile-button @click="${this.giveUp}">Give up!</dile-button>
-              <dile-button @click="${this.resetQuiz}">Reset!</dile-button>
-              ${this.isGaveUpQuizState(this.state.quizState)
-                ? html`<span>Gave up mode...</span>`
-                : html``}
-              <span>Total Strokes ${strokeCount}</span>
-              <span>Correct Strokes ${this.state.strokesDrawn}</span>
-            </div>
-          </dile-card>
-        </div>`
-      : html`<div id="main">
-          <dile-card shadow-md title="Quiz">
-            <div id="quizContainer">
-              <span
-                >Failed to load the character ${this.character} error:
-                ${this.state.errorMessage}</span
-              >
-            </div>
+              <div id="strokesDiv"></div>
+              <div slot="footer">
+                <dile-button @click="${this.giveUp}">Give up!</dile-button>
+                <dile-button @click="${this.resetQuiz}">Reset!</dile-button>
+                ${this.isGaveUpQuizState(this.state.quizState)
+                  ? html`<span>Gave up mode...</span>`
+                  : html``}
+                <span>Total Strokes ${strokeCount}</span>
+                <span>Correct Strokes ${this.state.strokesDrawn}</span>
+              </div>
+            </dile-card>
+          </div>
+        `
+      : html`
+          <div id="main">
+            <dile-card shadow-md title="Quiz">
+              <div id="quizContainer">
+                <span
+                  >Failed to load the character ${this.character} error:
+                  ${this.state.errorMessage}</span
+                >
+              </div>
 
-            <div id="strokesDiv"></div>
-            <div slot="footer">
-              <dile-button @click="${this.resetQuiz}">Try Reset?</dile-button>
-            </div>
-          </dile-card>
-        </div>`;
+              <div id="strokesDiv"></div>
+              <div slot="footer">
+                <dile-button @click="${this.resetQuiz}">Try Reset?</dile-button>
+              </div>
+            </dile-card>
+          </div>
+        `;
   }
 }
 

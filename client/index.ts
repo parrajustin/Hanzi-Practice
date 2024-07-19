@@ -19,6 +19,7 @@ import "@dile/ui/components/modal/modal";
 import "@dile/ui/components/toast/toast";
 import "@dile/ui/components/rating/rating.js";
 import "@dile/ui/components/spinner/spinner.js";
+import "@dile/ui/components/modal/modal-help";
 import "@doubletrade/lit-datatable/lit-datatable";
 import "@doubletrade/lit-datatable/lit-datatable-column";
 import { SetApp } from "./store";
@@ -36,12 +37,16 @@ const firebaseConfig = {
   measurementId: "G-BMN2W33RJG"
 };
 
-document.addEventListener("DOMContentLoaded", async () => {
-  // Initialize Firebase
+// Initialize Firebase
+const startFirestore = async () => {
   const app = initializeApp(firebaseConfig);
-  initializeFirestore(app, { localCache: persistentLocalCache(/*settings*/ {}) });
+  initializeFirestore(app, {
+    localCache: persistentLocalCache(/*settings*/ {})
+  });
   await SetApp(app);
-  // const analytics = getAnalytics(app);
+};
+document.addEventListener("DOMContentLoaded", async () => {
+  await startFirestore();
 });
 
 const registerServiceWorker = async () => {
