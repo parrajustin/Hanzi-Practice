@@ -147,7 +147,7 @@ export class QuizElement extends LitElement {
 
   /** Render the character steps. */
   private renderCharacterSteps() {
-    if (this.state.state !== "StateQuiz") {
+    if (this.state.state !== "StateGiveUpInform") {
       return;
     }
 
