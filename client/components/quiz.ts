@@ -13,12 +13,10 @@ import type {
   QuizStates,
   StateDone,
   StateError,
-  StateGiveUpInfrom,
   StateGiveUpPractice
 } from "./quiz_state";
 import { QuizReducer } from "./quiz_state";
 import { StateReducerController } from "client/util/state_reducer";
-import { typeGuard } from "client/util/typeguard";
 
 export interface QuizDetail {
   // Strokes that had mistakes.
@@ -26,38 +24,6 @@ export interface QuizDetail {
   // Percentage of strokes with mistakes.
   percentMistakes: FractionD;
 }
-
-// export enum QuizState {
-//   /** Default starting unknown state. */
-//   UnknownQuizState,
-//   /** Normal quiz state. User try quiz and results are retruned. */
-//   NormalQuiz,
-//   /** First state in gave up. User is informed of shape and made to try. */
-//   GaveUpInform,
-//   /** Second state in gave up. User has to put in character and get difficult at least 4. */
-//   GaveUpPractice,
-//   /** Some error happened. */
-//   ErrorState
-// }
-
-// export interface QuizDataState {
-//   /** Old character the quiz started on. */
-//   oldCharacter: string;
-//   /** Hanzi char data. */
-//   charData: Option<{ char: string; loadedData: CharacterJson }>;
-// /** The current stroke the user is on. */
-// strokeNumber: number;
-// /** Number of strokes user has done. */
-// strokesDrawn: number;
-// /** Number of strokes that have a mistake. */
-// strokesThatHaveMistakes: number;
-//   /** The wanted quiz state. */
-//   wantQuizState: QuizState;
-//   /** The current quiz state. */
-//   quizState: QuizState;
-//   /** The error message if any. */
-//   errorMessage: string;
-// }
 
 /** State machine for the quiz element. */
 export const quizStateMachine = new StateReducerController<QuizStates, QuizActions>(
