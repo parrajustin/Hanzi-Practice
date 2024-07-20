@@ -1,14 +1,24 @@
 import type { TemplateResult } from "lit";
 import { LitElement, css, html } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 import type { CharacterJson, StrokeData } from "hanzi-writer";
 import HanziWriter from "hanzi-writer";
 import type { Option } from "client/option";
 import { None, Some } from "client/option";
 import { FractionD } from "client/util/fraction";
-import type { Immutable, WritableDraft } from "immer";
+import type { Immutable } from "immer";
 import { WrapPromise } from "client/util/wrap_promise";
-import { StateController } from "client/util/state";
+import type {
+  QuizActions,
+  QuizStates,
+  StateDone,
+  StateError,
+  StateGiveUpInfrom,
+  StateGiveUpPractice
+} from "./quiz_state";
+import { QuizReducer } from "./quiz_state";
+import { StateReducerController } from "client/util/state_reducer";
+import { typeGuard } from "client/util/typeguard";
 
 export interface QuizDetail {
   // Strokes that had mistakes.
@@ -17,53 +27,43 @@ export interface QuizDetail {
   percentMistakes: FractionD;
 }
 
-export enum QuizState {
-  /** Default starting unknown state. */
-  UnknownQuizState,
-  /** Normal quiz state. User try quiz and results are retruned. */
-  NormalQuiz,
-  /** First state in gave up. User is informed of shape and made to try. */
-  GaveUpInform,
-  /** Second state in gave up. User has to put in character and get difficult at least 4. */
-  GaveUpPractice,
-  /** Some error happened. */
-  ErrorState
-}
+// export enum QuizState {
+//   /** Default starting unknown state. */
+//   UnknownQuizState,
+//   /** Normal quiz state. User try quiz and results are retruned. */
+//   NormalQuiz,
+//   /** First state in gave up. User is informed of shape and made to try. */
+//   GaveUpInform,
+//   /** Second state in gave up. User has to put in character and get difficult at least 4. */
+//   GaveUpPractice,
+//   /** Some error happened. */
+//   ErrorState
+// }
 
-export interface QuizDataState {
-  /** Old character the quiz started on. */
-  oldCharacter: string;
-  /** Hanzi char data. */
-  charData: Option<{ char: string; loadedData: CharacterJson }>;
-  /** The current stroke the user is on. */
-  strokeNumber: number;
-  /** Number of strokes user has done. */
-  strokesDrawn: number;
-  /** Number of strokes that have a mistake. */
-  strokesThatHaveMistakes: number;
-  /** The wanted quiz state. */
-  wantQuizState: QuizState;
-  /** The current quiz state. */
-  quizState: QuizState;
-  /** The error message if any. */
-  errorMessage: string;
-}
+// export interface QuizDataState {
+//   /** Old character the quiz started on. */
+//   oldCharacter: string;
+//   /** Hanzi char data. */
+//   charData: Option<{ char: string; loadedData: CharacterJson }>;
+// /** The current stroke the user is on. */
+// strokeNumber: number;
+// /** Number of strokes user has done. */
+// strokesDrawn: number;
+// /** Number of strokes that have a mistake. */
+// strokesThatHaveMistakes: number;
+//   /** The wanted quiz state. */
+//   wantQuizState: QuizState;
+//   /** The current quiz state. */
+//   quizState: QuizState;
+//   /** The error message if any. */
+//   errorMessage: string;
+// }
 
-export type ReadonlyQuizState = Immutable<QuizDataState>;
-
-export const DEFAULT_QUIZ_STATE: QuizDataState = {
-  oldCharacter: "__OLD__",
-  charData: None,
-  strokeNumber: -1,
-  strokesDrawn: 0,
-  strokesThatHaveMistakes: 0,
-  wantQuizState: QuizState.NormalQuiz,
-  quizState: QuizState.UnknownQuizState,
-  errorMessage: ""
-};
-/** The global state for quiz state. */
-export const QUIZ_STATE_CONTROLLER = new StateController<QuizDataState>(DEFAULT_QUIZ_STATE);
-
+/** State machine for the quiz element. */
+export const quizStateMachine = new StateReducerController<QuizStates, QuizActions>(
+  { state: "StateNoChar" },
+  QuizReducer
+);
 
 @customElement("quiz-element")
 export class QuizElement extends LitElement {
@@ -84,51 +84,73 @@ export class QuizElement extends LitElement {
       outline: 1px solid black;
     }
   `;
-  static properties = {
-    character: { type: String },
-    prompt: { type: String },
-    pinyin: { type: String },
-    tone: { type: Number }
-  };
-  /**
-   * The chinese character to draw.
-   */
-  @property({
-    type: String
-  })
-  character: string = "";
-
-  @property()
-  prompt?: string;
-
-  /**
-   * The pinyin of the chinese character.
-   */
-  @property()
-  pinyin?: string;
-
-  /**
-   * The tone of the character.
-   */
-  @property()
-  tone?: number;
-
-  private maxDimension_ = 0;
 
   @state()
-  private state: ReadonlyQuizState;
+  private state: Immutable<QuizStates>;
+
+  private maxDimension_ = 0;
   /** If a hanzi writer instance exists. */
   private writer_: Option<HanziWriter> = None;
 
   constructor() {
     super();
-    QUIZ_STATE_CONTROLLER.addListener((quizState) => {
+    quizStateMachine.addListener((quizState) => {
       this.state = quizState;
+
+      if (quizState.state === "StateDone" && quizState.cameFromGaveUp) {
+        // Otherwise return the default gave up on complete message.
+        const options: CustomEventInit<QuizDetail> = {
+          bubbles: true,
+          composed: true,
+          detail: {
+            strokeMistakes: quizState.totalMistakes,
+            percentMistakes: new FractionD(1.0)
+          }
+        };
+        this.dispatchEvent(new CustomEvent<QuizDetail>("onComplete", options));
+      } else if (quizState.state === "StateDone" && !quizState.cameFromGaveUp) {
+        const options: CustomEventInit<QuizDetail> = {
+          bubbles: true,
+          composed: true,
+          detail: {
+            strokeMistakes: quizState.totalMistakes,
+            percentMistakes: new FractionD(
+              quizState.strokesThatHaveMistakes / quizState.charData.loadedData.strokes.length
+            )
+          }
+        };
+        this.dispatchEvent(new CustomEvent<QuizDetail>("onComplete", options));
+      }
     }, /*includeInitalValue=*/ true);
+    quizStateMachine.addAsyncListener(async (data) => {
+      if (data.state === "StateLoadingChar" && !data.isLoadingChar) {
+        quizStateMachine.applyAction({ action: "ActionSetIsLoadingCharJson" });
+        const charData = await WrapPromise<CharacterJson, Error>(
+          HanziWriter.loadCharacterData(data.character) as Promise<CharacterJson>
+        );
+        if (charData.err) {
+          quizStateMachine.applyAction({
+            action: "ActionSetError",
+            errorText: `Failed call "loadCharacterData" with data "${charData.val}".`
+          });
+        } else if (this.state.state !== "StateNoChar" && this.state.character === data.character) {
+          // Check in case if the character changed between loading the json and any change.
+          quizStateMachine.applyAction({
+            action: "ActionLoadCharacterJson",
+            char: data.character,
+            loadedData: charData.safeUnwrap()
+          });
+        }
+      }
+    });
   }
 
   /** Render the character steps. */
   private renderCharacterSteps() {
+    if (this.state.state !== "StateQuiz") {
+      return;
+    }
+
     const renderFanningStrokes = (target: HTMLElement, strokes: string[]) => {
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       svg.style.width = "75px";
@@ -154,23 +176,18 @@ export class QuizElement extends LitElement {
 
     const target = this.shadowRoot?.getElementById("strokesDiv") as HTMLDivElement;
     target.innerHTML = "";
-    if (this.state.charData.some) {
-      for (let i = 0; i < this.state.charData.safeValue().loadedData.strokes.length; i++) {
-        const strokesPortion = this.state.charData.safeValue().loadedData.strokes.slice(0, i + 1);
-        renderFanningStrokes(target, strokesPortion);
-      }
-    } else {
-      QUIZ_STATE_CONTROLLER.applyChange((base) => {
-        base.wantQuizState = QuizState.ErrorState;
-        base.errorMessage = `Error: trying to render "renderCharacterSteps" but no char data!`;
-      });
+    for (let i = 0; i < this.state.charData.loadedData.strokes.length; i++) {
+      const strokesPortion = this.state.charData.loadedData.strokes.slice(0, i + 1);
+      renderFanningStrokes(target, strokesPortion);
     }
   }
 
   /** Removes character steps if there is any. */
   private removeCharacterSteps() {
-    const giveUpStrokes = this.shadowRoot?.getElementById("strokesDiv") as HTMLDivElement;
-    giveUpStrokes.innerHTML = "";
+    const giveUpStrokes = this.shadowRoot?.getElementById("strokesDiv");
+    if (giveUpStrokes !== null && giveUpStrokes !== undefined) {
+      giveUpStrokes.innerHTML = "";
+    }
   }
 
   /** When cleaning up a quiz writer it leaves behind an svg element. We need to remove it. */
@@ -182,13 +199,29 @@ export class QuizElement extends LitElement {
   }
 
   async updated() {
-    if (
-      this.state.quizState === this.state.wantQuizState &&
-      this.state.oldCharacter === this.character
-    ) {
-      // No update needed.
+    if (this.state.state === "StateDone") {
       return;
     }
+    if (
+      this.state.state !== "StateQuiz" &&
+      this.state.state !== "StateGiveUpInform" &&
+      this.state.state !== "StateGiveUpPractice"
+    ) {
+      // No update needed.
+      this.removeCharacterSteps();
+      this.removeOldWriterOutline();
+      this.writer_ = this.writer_.andThen((v) => {
+        v.cancelQuiz();
+        return Some(v);
+      });
+      return;
+    }
+    if (!this.state.drawingTainted) {
+      // We only need to continue if the drawing surface is tainted.
+      return;
+    }
+    quizStateMachine.applyAction({ action: "ActionClearDrawingTaint" });
+    console.log("running updated");
 
     // Clean up.
     this.removeCharacterSteps();
@@ -198,71 +231,53 @@ export class QuizElement extends LitElement {
       return Some(v);
     });
 
-    const resetStroke = (base: WritableDraft<QuizDataState>) => {
-      base.strokeNumber = -1;
-      base.strokesThatHaveMistakes = 0;
-      base.strokesDrawn = 0;
-    };
-
     const normalOnMistake = (strokeData: StrokeData) => {
-      QUIZ_STATE_CONTROLLER.applyChange((base) => {
-        base.strokesDrawn++;
-        if (base.strokeNumber !== strokeData.strokeNum) {
-          base.strokeNumber = strokeData.strokeNum;
-          base.strokesThatHaveMistakes++;
-        }
+      quizStateMachine.applyAction({
+        action: "ActionStrokeMistake",
+        strokeNumber: strokeData.strokeNum
       });
     };
     const normalOnCorrect = () => {
-      QUIZ_STATE_CONTROLLER.applyChange((base) => {
-        base.strokesDrawn++;
+      quizStateMachine.applyAction({
+        action: "ActionStrokeCorrect"
       });
     };
     const normalOnComplete = (summary: { character: string; totalMistakes: number }) => {
-      const options: CustomEventInit<QuizDetail> = {
-        bubbles: true,
-        composed: true,
-        detail: {
-          strokeMistakes: summary.totalMistakes,
-          percentMistakes: new FractionD(
-            this.state.strokesThatHaveMistakes /
-              this.state.charData.andThen((val) => Some(val.loadedData.strokes.length)).valueOr(10)
-          )
-        }
-      };
-      this.dispatchEvent(new CustomEvent<QuizDetail>("onComplete", options));
+      if (this.state.state === "StateNoChar") {
+        quizStateMachine.applyAction({
+          action: "ActionSetError",
+          errorText: `Quiz complete but incorrect state "StateNoChar".`
+        });
+        return;
+      }
+      quizStateMachine.applyAction({
+        action: "ActionNormalQuizDone",
+        totalMistakes: summary.totalMistakes
+      });
     };
+    const nilCallback = () => {};
     const gaveUpInstructionOnComplete = () => {
       // On complete of the instruction mode go to practice.
-      QUIZ_STATE_CONTROLLER.applyChange((base) => {
-        base.wantQuizState = QuizState.GaveUpPractice;
-      }).applyChange(resetStroke);
+      quizStateMachine.applyAction({ action: "ActionGaveUpInformPhaseDone" });
     };
-    const gaveUpPracticeOnComplete = () => {
+    const gaveUpPracticeOnComplete = (summary: { character: string; totalMistakes: number }) => {
+      if (this.state.state !== "StateGiveUpPractice") {
+        // No update needed.
+        return;
+      }
       const percentMistakes = new FractionD(
-        this.state.strokesThatHaveMistakes /
-          this.state.charData.andThen((val) => Some(val.loadedData.strokes.length)).valueOr(10)
+        this.state.strokesThatHaveMistakes / this.state.charData.loadedData.strokes.length
       );
       if (percentMistakes.fraction > 0.25) {
         // If user failed to get 75% correct go back to instruction.
-        QUIZ_STATE_CONTROLLER.applyChange((base) => {
-          base.wantQuizState = QuizState.GaveUpInform;
-        }).applyChange(resetStroke);
+        quizStateMachine.applyAction({ action: "ActionGaveUpPracticeFailed" });
         return;
       }
 
-      // Otherwise return the default gave up on complete message.
-      const options: CustomEventInit<QuizDetail> = {
-        bubbles: true,
-        composed: true,
-        detail: {
-          strokeMistakes: this.state.charData
-            .andThen((val) => Some(val.loadedData.strokes.length))
-            .valueOr(100),
-          percentMistakes: new FractionD(1.0)
-        }
-      };
-      this.dispatchEvent(new CustomEvent<QuizDetail>("onComplete", options));
+      quizStateMachine.applyAction({
+        action: "ActionGaveUpPracticeDone",
+        totalMistakes: summary.totalMistakes
+      });
     };
 
     //
@@ -273,7 +288,7 @@ export class QuizElement extends LitElement {
       "grid-background-target"
     ) as unknown as HTMLElement;
     this.writer_ = Some(
-      HanziWriter.create(element, this.character, {
+      HanziWriter.create(element, this.state.character, {
         width: this.maxDimension_,
         height: this.maxDimension_,
         showCharacter: false,
@@ -281,36 +296,34 @@ export class QuizElement extends LitElement {
         padding: 5
       })
     );
+    let funcOnMistake = normalOnMistake;
+    let funcOnCorrectStroke = normalOnCorrect;
     let funcOnComplete = normalOnComplete;
-    switch (this.state.wantQuizState) {
-      case QuizState.UnknownQuizState:
-        funcOnComplete = () => {};
+    switch (this.state.state) {
+      case "StateQuiz":
         break;
-      case QuizState.ErrorState:
-      case QuizState.NormalQuiz:
-        break;
-      case QuizState.GaveUpInform:
+      case "StateGiveUpInform":
+        funcOnMistake = nilCallback;
+        funcOnCorrectStroke = nilCallback;
         funcOnComplete = gaveUpInstructionOnComplete;
         break;
-      case QuizState.GaveUpPractice:
+      case "StateGiveUpPractice":
+        funcOnMistake = normalOnMistake;
+        funcOnCorrectStroke = normalOnCorrect;
         funcOnComplete = gaveUpPracticeOnComplete;
         break;
     }
     this.writer_.safeValue().quiz({
-      onMistake: normalOnMistake,
-      onCorrectStroke: normalOnCorrect,
+      onMistake: funcOnMistake,
+      onCorrectStroke: funcOnCorrectStroke,
       onComplete: funcOnComplete
     });
-    if (this.state.wantQuizState === QuizState.GaveUpInform) {
+    if (this.state.state === "StateGiveUpInform") {
       this.writer_.safeValue().showOutline();
       this.renderCharacterSteps();
     } else {
       this.writer_.safeValue().hideOutline();
     }
-    QUIZ_STATE_CONTROLLER.applyChange((base) => {
-      base.quizState = base.wantQuizState;
-      base.oldCharacter = this.character;
-    }).applyChange(resetStroke);
   }
 
   /**
@@ -344,108 +357,110 @@ export class QuizElement extends LitElement {
     </svg>`;
   }
 
-  protected override async scheduleUpdate(): Promise<void> {
-    // Only try to load the hanzi char data if we haven't already or if the old char does not equal the new char.
-    if (
-      this.state.wantQuizState !== QuizState.ErrorState &&
-      (this.state.charData.none || this.state.charData.safeValue().char != this.character)
-    ) {
-      const charData = await WrapPromise<CharacterJson, Error>(
-        HanziWriter.loadCharacterData(this.character) as Promise<CharacterJson>
-      );
-      if (charData.ok) {
-        QUIZ_STATE_CONTROLLER.applyChange((base) => {
-          base.charData = Some({ char: this.character, loadedData: charData.safeUnwrap() });
-        });
-      } else {
-        QUIZ_STATE_CONTROLLER.applyChange((base) => {
-          base.wantQuizState = QuizState.ErrorState;
-          base.errorMessage = `Error: ${charData.val}`;
-        });
-      }
-    }
-    super.scheduleUpdate();
-  }
-
   /** User has chosen to give up. Change state to represent that. */
   protected giveUp() {
-    QUIZ_STATE_CONTROLLER.applyChange((base) => {
-      base.wantQuizState = QuizState.GaveUpInform;
-    });
-  }
-
-  /** Gets if the current quiz state is one where the user gave up. */
-  protected isGaveUpQuizState(quizState: QuizState): boolean {
-    switch (quizState) {
-      case QuizState.UnknownQuizState:
-        return false;
-      case QuizState.NormalQuiz:
-        return false;
-      case QuizState.GaveUpInform:
-        return true;
-      case QuizState.GaveUpPractice:
-        return true;
-      case QuizState.ErrorState:
-        return false;
-    }
+    quizStateMachine.applyAction({ action: "ActionGaveUp" });
   }
 
   /** Resets the quiz state. */
   protected resetQuiz() {
-    QUIZ_STATE_CONTROLLER.resetToBase();
+    if (this.state.state === "StateNoChar") {
+      return;
+    }
+    quizStateMachine.applyAction({
+      action: "ActionSetQuizHanzi",
+      character: this.state.character,
+      pinyin: this.state.pinyin,
+      prompt: this.state.prompt,
+      tone: this.state.tone
+    });
+  }
+
+  protected gaveUpRender(
+    state: Immutable<StateGiveUpPractice> | Immutable<StateGiveUpInfrom> | Immutable<StateDone>
+  ): TemplateResult {
+    const svgOutline = this.createSvgOutline(this.maxDimension_);
+    const hasCorrectStrokes = state.state === "StateGiveUpPractice";
+    return html`
+      <div id="main">
+        <dile-card shadow-md title="Quiz">
+          <div id="quizContainer">
+            <span>${state.prompt}</span>
+          </div>
+          <div id="drawing">${svgOutline}</div>
+
+          <div id="strokesDiv"></div>
+          <div slot="footer">
+            <dile-button @click="${this.resetQuiz}">Reset!</dile-button>
+            <span>Gave up mode...</span>
+            <span>Total Strokes ${state.charData.loadedData.strokes.length}</span>
+            ${hasCorrectStrokes ? html`<span>Correct Strokes ${state.strokesDrawn}</span>` : html``}
+          </div>
+        </dile-card>
+      </div>
+    `;
+  }
+
+  protected errorRender(state: Immutable<StateError>): TemplateResult {
+    return html`
+      <div id="main">
+        <dile-card shadow-md title="Quiz">
+          <div id="quizContainer">
+            <span>Failed to load the character ${state.character} error: ${state.errorText}</span>
+          </div>
+
+          <div slot="footer">
+            <dile-button @click="${this.resetQuiz}">Try Reset?</dile-button>
+          </div>
+        </dile-card>
+      </div>
+    `;
   }
 
   protected render() {
     const w = Math.min(window.innerWidth, 960);
     const h = window.innerHeight;
     // Max dimension is the smallest of the 2 minus a number for padding of cards and whatnot.
-    this.maxDimension_ = Math.min(w - 250, h);
+    this.maxDimension_ = Math.min(w * 0.7, h);
+
+    if (this.state.state === "StateNoChar" || this.state.state === "StateLoadingChar") {
+      return html`<dile-spinner active></dile-spinner>`;
+    }
+    if (this.state.state === "StateError") {
+      return this.errorRender(this.state);
+    }
+    if (
+      this.state.state === "StateGiveUpInform" ||
+      this.state.state === "StateGiveUpPractice" ||
+      (this.state.state === "StateDone" && this.state.cameFromGaveUp)
+    ) {
+      return this.gaveUpRender(this.state);
+    }
 
     let strokeCount = 0;
-    if (this.state.charData.some) {
-      strokeCount = this.state.charData.safeValue().loadedData.strokes.length;
+    if (this.state.charData) {
+      strokeCount = this.state.charData.loadedData.strokes.length;
     }
 
     const svgOutline = this.createSvgOutline(this.maxDimension_);
-    return this.state.quizState !== QuizState.ErrorState
-      ? html`
-          <div id="main">
-            <dile-card shadow-md title="Quiz">
-              <div id="quizContainer">
-                <span>${this.prompt}</span>
-              </div>
-              <div id="drawing">${svgOutline}</div>
-
-              <div id="strokesDiv"></div>
-              <div slot="footer">
-                <dile-button @click="${this.giveUp}">Give up!</dile-button>
-                <dile-button @click="${this.resetQuiz}">Reset!</dile-button>
-                ${this.isGaveUpQuizState(this.state.quizState)
-                  ? html`<span>Gave up mode...</span>`
-                  : html``}
-                <span>Total Strokes ${strokeCount}</span>
-                <span>Correct Strokes ${this.state.strokesDrawn}</span>
-              </div>
-            </dile-card>
+    return html`
+      <div id="main">
+        <dile-card shadow-md title="Quiz">
+          <div id="quizContainer">
+            <span>${this.state.prompt}</span>
           </div>
-        `
-      : html`
-          <div id="main">
-            <dile-card shadow-md title="Quiz">
-              <div id="quizContainer">
-                <span
-                  >Failed to load the character ${this.character} error:
-                  ${this.state.errorMessage}</span
-                >
-              </div>
+          <div id="drawing">${svgOutline}</div>
 
-              <div id="strokesDiv"></div>
-              <div slot="footer">
-                <dile-button @click="${this.resetQuiz}">Try Reset?</dile-button>
-              </div>
-            </dile-card>
+          <div id="strokesDiv"></div>
+          <div slot="footer">
+            <dile-button @click="${this.giveUp}">Give up!</dile-button>
+            <dile-button @click="${this.resetQuiz}">Reset!</dile-button>
+            <span>Total Strokes ${strokeCount}</span>
+            <span>Correct Strokes ${this.state.strokesDrawn}</span>
           </div>
-        `;
+        </dile-card>
+      </div>
+    `;
   }
 }
 

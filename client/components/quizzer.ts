@@ -5,7 +5,7 @@ import { addDoc, collection, getFirestore, serverTimestamp } from "firebase/fire
 import type { TemplateResult } from "lit";
 import { LitElement, css, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
-import type { QuizDetail } from "./quiz";
+import { quizStateMachine, type QuizDetail } from "./quiz";
 import type { PinyinDetail } from "./pinyin_selector";
 import { Shuffle } from "client/util/shuffle";
 import type { Immutable } from "immer";
@@ -88,6 +88,21 @@ export class QuizzerElement extends LitElement {
           dueCardIndex: 0,
           dueCardsFromSystem: srs as DueCardType[]
         });
+      }
+
+      if (data.state === "StateQuiz") {
+        const quizState = quizStateMachine.getCurrentState();
+        const dueCardStruct = data.dueCardsFromSystem[data.dueCardIndex] as DueCardType;
+        const hanzi = dueCardStruct[0];
+        if (quizState.state === "StateNoChar" || quizState.character !== hanzi.hanzi) {
+          quizStateMachine.applyAction({
+            action: "ActionSetQuizHanzi",
+            character: hanzi.hanzi,
+            pinyin: hanzi.pinyin,
+            prompt: hanzi.text,
+            tone: hanzi.tone
+          });
+        }
       }
     }, /*includeInitalValue=*/ true);
 

@@ -16,6 +16,7 @@ export class PinyinSelectorElement extends LitElement {
     }
     #quizContainer {
       display: flex;
+      flex-wrap: wrap;
     }
     .spacer {
       margin: 5px;

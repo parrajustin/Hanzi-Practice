@@ -36,6 +36,10 @@ export class StateReducerController<
     this.current_ = castImmutable<StateT>(base);
   }
 
+  public getCurrentState(): Immutable<StateT> {
+    return this.current_;
+  }
+
   /** Add a callback listener to the state. If `includeInitalValue` is true the current value will always be published. */
   public addListener(
     callback: ListenerCallback<StateT>,
